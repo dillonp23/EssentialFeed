@@ -39,4 +39,14 @@ class RemoteFeedLoaderTests: XCTestCase {
         
         XCTAssertNil(client.requestedURL)
     }
+    
+    func test_load_requestDataFromURL() {
+        let client = MockHTTPClient()
+        /// "System Under Test"
+        let sut = RemoteFeedLoader(client: client)
+        
+        sut.load()
+        
+        XCTAssertNotNil(client.requestedURL)
+    }
 }
