@@ -95,13 +95,15 @@ extension RemoteFeedLoaderTests {
         }
     }
     
+    private typealias SystemUnderTest = (sut: RemoteFeedLoader, client: HTTPClientSpy)
+    
     /// Generates a "System Under Test" to be used by `XCTestCase`
     /// - Parameters:
     ///    - url: the URL to be used for the `MockHTTPClient` request
     /// - Returns:
     ///   A tuple containing (1) the `sut` initialized with a `MockHTTPClient` instance,
     ///   and (2) the `client` instance itself in order to perform `XCTest` assertions
-    private func makeSUT(url: URL = URL(string: "https://a-url")!) -> (sut: RemoteFeedLoader, client: HTTPClientSpy) {
+    private func makeSUT(url: URL = URL(string: "https://a-url")!) -> SystemUnderTest {
         let client = HTTPClientSpy()
         let sut = RemoteFeedLoader(client: client, url: url)
         return (sut, client)
