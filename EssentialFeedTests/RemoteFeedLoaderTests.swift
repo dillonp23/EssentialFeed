@@ -51,7 +51,7 @@ class RemoteFeedLoaderTests: XCTestCase {
 // MARK: - Helpers
 extension RemoteFeedLoaderTests {
     
-    private class MockHTTPClient: HTTPClient {
+    private class HTTPClientSpy: HTTPClient {
         var requestedURLs = [URL]()
         var completions = [(Error) -> Void]()
         
@@ -71,8 +71,8 @@ extension RemoteFeedLoaderTests {
     /// - Returns:
     ///   A tuple containing (1) the `sut` initialized with a `MockHTTPClient` instance,
     ///   and (2) the `client` instance itself in order to perform `XCTest` assertions
-    private func makeSUT(url: URL = URL(string: "https://a-url")!) -> (sut: RemoteFeedLoader, client: MockHTTPClient) {
-        let client = MockHTTPClient()
+    private func makeSUT(url: URL = URL(string: "https://a-url")!) -> (sut: RemoteFeedLoader, client: HTTPClientSpy) {
+        let client = HTTPClientSpy()
         let sut = RemoteFeedLoader(client: client, url: url)
         return (sut, client)
     }
