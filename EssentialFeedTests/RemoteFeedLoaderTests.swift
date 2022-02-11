@@ -25,33 +25,44 @@ protocol HTTPClient {
     func get(from url: URL)
 }
 
-class MockHTTPClient: HTTPClient {
-    var requestedURL: URL?
-    
-    func get(from url: URL) {
-        requestedURL = url
-    }
-}
-
 class RemoteFeedLoaderTests: XCTestCase {
     
     func test_init_doesNotRequestDataFromURL() {
-        let url =  URL(string: "https://a-url")!
-        let client = MockHTTPClient()
-        _ = RemoteFeedLoader(client: client, url: url)
+        let (_, client) = makeSUT()
         
-        // Asssert nil as url isn't set until sut.load() is called
+        // AsssertNil as url shouldn't be set until sut.load() called
         XCTAssertNil(client.requestedURL)
     }
     
     func test_load_requestDataFromURL() {
         let url = URL(string: "https://a-given-url.com")!
-        let client = MockHTTPClient()
-        /// "System Under Test"
-        let sut = RemoteFeedLoader(client: client, url: url)
-        
+        let (sut, client) = makeSUT(url: url)
         sut.load()
         
         XCTAssertEqual(client.requestedURL, url)
+    }
+}
+
+// MARK: - Helpers
+extension RemoteFeedLoaderTests {
+    
+    private class MockHTTPClient: HTTPClient {
+        var requestedURL: URL?
+        
+        func get(from url: URL) {
+            requestedURL = url
+        }
+    }
+    
+    /// Generates a "System Under Test" to be used by `XCTestCase`
+    /// - Parameters:
+    ///    - url: the URL to be used for the `MockHTTPClient` request
+    /// - Returns:
+    ///   A tuple containing (1) the `sut` initialized with a `MockHTTPClient` instance,
+    ///   and (2) the `client` instance itself in order to perform `XCTest` assertions
+    private func makeSUT(url: URL = URL(string: "https://a-url")!) -> (sut: RemoteFeedLoader, client: MockHTTPClient) {
+        let client = MockHTTPClient()
+        let sut = RemoteFeedLoader(client: client, url: url)
+        return (sut, client)
     }
 }
