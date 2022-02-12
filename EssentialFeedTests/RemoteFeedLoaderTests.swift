@@ -75,25 +75,12 @@ class RemoteFeedLoaderTests: XCTestCase {
     
     func test_load_deliversItemsOn200HTTPResponseWithValidJSON() {
         let (sut, client) = makeSUT()
-
-        var feedItems = [FeedItem]()
-        var jsonItems = [FeedItemsJSON]()
-        
-        for _ in 0..<Int.random(in: 1...10) {
-            let (feedItem, jsonItem) = createMockFeedItemAndJSON()
-            feedItems.append(feedItem)
-            jsonItems.append(jsonItem)
-        }
-        let clientResponse = ["items": jsonItems]
+        let (feedItems, jsonPayload) = mockFeedItemsAndResponsePayload()
         
         expect(sut, toCompleteWith: .success(feedItems), forAction: {
-            let json = try! JSONSerialization.data(withJSONObject: clientResponse)
+            let json = try! JSONSerialization.data(withJSONObject: jsonPayload)
             client.complete(with: 200, data: json)
         })
-    }
-    
-    private func makeJSONResponseObject(items: [FeedItemsJSON]) {
-        
     }
 }
 
@@ -131,10 +118,24 @@ extension RemoteFeedLoaderTests {
 // MARK: - Helper Methods
 extension RemoteFeedLoaderTests {
     
-    // MARK: Mocking FeedItems & JSON
-    typealias FeedItemsJSON = [String: String]
+    // MARK: Mocking FeedItems & JSON Response from API
+    typealias FeedItemJSON = [String: String]
+    typealias APIResponsePayload = [String: [FeedItemJSON]]
     
-    private func createMockFeedItemAndJSON() -> (FeedItem, FeedItemsJSON) {
+    private func mockFeedItemsAndResponsePayload() -> ([FeedItem], APIResponsePayload) {
+        var feedItems = [FeedItem]()
+        var payload = APIResponsePayload()
+        
+        for _ in 0..<Int.random(in: 1...10) {
+            let (feedItem, jsonItem) = createMockItemAndJSON()
+            feedItems.append(feedItem)
+            payload["items", default: []].append(jsonItem)
+        }
+
+        return (feedItems, payload)
+    }
+    
+    private func createMockItemAndJSON() -> (FeedItem, FeedItemJSON) {
         let itemID = UUID()
         // Use first 8 characters of UUID string to append to key-value
         // pairs (if needed) to mock different values for each feed item
