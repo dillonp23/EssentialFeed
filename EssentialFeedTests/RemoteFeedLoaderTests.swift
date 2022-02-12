@@ -50,7 +50,7 @@ class RemoteFeedLoaderTests: XCTestCase {
         
         statusCodes.enumerated().forEach { index, code in
             expect(sut, toCompleteWith: .failure(.invalidData), forAction: {
-                client.complete(with: code, at: index)
+                client.complete(with: code, data: Data(), at: index)
             })
         }
     }
@@ -59,7 +59,7 @@ class RemoteFeedLoaderTests: XCTestCase {
         let (sut, client) = makeSUT()
         
         expect(sut, toCompleteWith: .failure(.invalidData), forAction: {
-            let invalidJSON = Data("invalidJSON".utf8)
+            let invalidJSON = mockBadData(with: .invalidJSON)
             client.complete(with: 200, data: invalidJSON)
         })
     }
@@ -68,7 +68,7 @@ class RemoteFeedLoaderTests: XCTestCase {
         let (sut, client) = makeSUT()
         
         expect(sut, toCompleteWith: .success([]), forAction: {
-            let emptyJSON = Data("{\"items\": []}".utf8)
+            let emptyJSON = mockBadData(with: .emptyJSON)
             client.complete(with: 200, data: emptyJSON)
         })
     }
@@ -102,7 +102,7 @@ extension RemoteFeedLoaderTests {
         }
         
         /// Mocks a get request completion success with an `HTTPURLResponse`
-        func complete(with statusCode: Int, data: Data = Data(), at index: Int = 0) {
+        func complete(with statusCode: Int, data: Data, at index: Int = 0) {
             let response = HTTPURLResponse(
                 url: requestedURLs[index],
                 statusCode: statusCode,
@@ -119,6 +119,23 @@ extension RemoteFeedLoaderTests {
     
     // MARK: Mocking FeedItems & JSON Response from API
     typealias FeedItemJSON = [String: String]
+    
+    private enum DataError {
+        case invalidJSON
+        case emptyJSON
+    }
+    
+    private func mockBadData(with error: DataError) -> Data {
+        switch error {
+            case .invalidJSON:
+                return Data("invalidJSON".utf8)
+            case .emptyJSON:
+                // mocks a valid API response, but with an empty array
+                let emptyJSON = ["items": [FeedItemJSON]()]
+                let data = try! JSONSerialization.data(withJSONObject: emptyJSON)
+                return data
+        }
+    }
     
     private func mockFeedItemsAndResponsePayload() -> ([FeedItem], Data) {
         var feedItems = [FeedItem]()
