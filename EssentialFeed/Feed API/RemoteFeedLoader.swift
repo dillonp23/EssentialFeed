@@ -44,7 +44,7 @@ public final class RemoteFeedLoader {
                 case let .success(data, response):
                     if response.statusCode == 200,
                         let root = try? JSONDecoder().decode(Root.self, from: data) {
-                        completion(.success(root.items))
+                        completion(.success(root.feedItems))
                     } else {
                         completion(.failure(.invalidData))
                     }
@@ -56,5 +56,30 @@ public final class RemoteFeedLoader {
 }
 
 private struct Root: Decodable {
-    let items: [FeedItem]
+    private let items: [APIItem]
+    
+    /// Intermediary type used to decouple the `<FeedLoader>` interface from
+    /// the specific implementation details of the backend/database API.
+    ///
+    /// The data received from the external API will be decoded into an `APIItem`
+    /// and remain private to external modules. This effectively prevents issues when
+    /// dealing with mismatch properties names (i.e. the API defines an `image`
+    /// property that is mapped to `imageURL` in our local `FeedItem` model).
+    private struct APIItem: Decodable {
+        let id: UUID
+        let description: String?
+        let location: String?
+        let image: URL
+    }
+    
+    /// Use this computed property to access the feed returned from the external API.
+    /// The private items array `[APIItem]` is mapped into a public `[FeedItem]`
+    var feedItems: [FeedItem] {
+        items.map {
+            FeedItem(id: $0.id,
+                     description: $0.description,
+                     location: $0.location,
+                     imageURL: $0.image)
+        }
+    }
 }
