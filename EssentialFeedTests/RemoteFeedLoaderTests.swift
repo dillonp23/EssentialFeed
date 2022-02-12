@@ -31,7 +31,7 @@ class RemoteFeedLoaderTests: XCTestCase {
         
         sut.load { _ in }
         sut.load { _ in }
-
+        
         XCTAssertEqual(client.requestedURLs, [url, url])
     }
     
@@ -149,7 +149,7 @@ extension RemoteFeedLoaderTests {
         
         // convert to data representation to test API response
         let jsonData = try! JSONSerialization.data(withJSONObject: jsonPayload)
-
+        
         return (feedItems, jsonData)
     }
     

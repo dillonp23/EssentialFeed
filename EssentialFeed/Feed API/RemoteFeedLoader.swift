@@ -42,10 +42,10 @@ public final class RemoteFeedLoader {
         client.get(from: url) { result in
             switch result {
                 case let .success(data, response):
-                    if response.statusCode == 200,
-                        let root = try? JSONDecoder().decode(Root.self, from: data) {
-                        completion(.success(root.feedItems))
-                    } else {
+                    do {
+                        let feedItems = try FeedItemsMapper.map(data, response)
+                        completion(.success(feedItems))
+                    } catch {
                         completion(.failure(.invalidData))
                     }
                 case .failure:
@@ -55,31 +55,46 @@ public final class RemoteFeedLoader {
     }
 }
 
-private struct Root: Decodable {
-    private let items: [APIItem]
-    
-    /// Intermediary type used to decouple the `<FeedLoader>` interface from
-    /// the specific implementation details of the backend/database API.
-    ///
-    /// The data received from the external API will be decoded into an `APIItem`
-    /// and remain private to external modules. This effectively prevents issues when
-    /// dealing with mismatch properties names (i.e. the API defines an `image`
-    /// property that is mapped to `imageURL` in our local `FeedItem` model).
-    private struct APIItem: Decodable {
-        let id: UUID
-        let description: String?
-        let location: String?
-        let image: URL
+/// Intermediary used to decouple the `<FeedLoader>` interface from
+/// the specific implementation details of the backend/database API.
+///
+/// Use the static `map(_:_:)` method to transform data received from
+/// API as `[APIItem]` into the local/usable `[FeedItem]` type.
+private class FeedItemsMapper {
+    private struct Root: Decodable {
+        private let items: [APIItem]
+        
+        /// The data received from external API will be decoded into an `APIItem`
+        /// and stored in a private array. This effectively prevents issues with mismatch
+        /// properties names between API and `FeedLoader`, e.g. the API defines an
+        /// `image` property that is mapped to `imageURL` in the local `FeedItem`
+        private struct APIItem: Decodable {
+            let id: UUID
+            let description: String?
+            let location: String?
+            let image: URL
+        }
+        
+        /// Use this computed property to access the feed returned from the external API.
+        /// The private items array `[APIItem]` is mapped into a public `[FeedItem]`
+        var feedItems: [FeedItem] {
+            items.map {
+                FeedItem(id: $0.id,
+                         description: $0.description,
+                         location: $0.location,
+                         imageURL: $0.image)
+            }
+        }
     }
     
-    /// Use this computed property to access the feed returned from the external API.
-    /// The private items array `[APIItem]` is mapped into a public `[FeedItem]`
-    var feedItems: [FeedItem] {
-        items.map {
-            FeedItem(id: $0.id,
-                     description: $0.description,
-                     location: $0.location,
-                     imageURL: $0.image)
+    /// Transform data received from API as `[APIItem]` into the local `[FeedItem]`
+    static func map(_ data: Data,
+                    _ response: HTTPURLResponse) throws -> [FeedItem] {
+        guard response.statusCode == 200 else {
+            throw RemoteFeedLoader.Error.invalidData
         }
+        
+        let root = try JSONDecoder().decode(Root.self, from: data)
+        return root.feedItems
     }
 }
