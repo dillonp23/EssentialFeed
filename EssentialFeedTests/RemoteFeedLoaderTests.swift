@@ -72,9 +72,32 @@ class RemoteFeedLoaderTests: XCTestCase {
             client.complete(with: 200, data: emptyJSON)
         })
     }
+    
+    func test_load_deliversItemsOn200HTTPResponseWithValidJSON() {
+        let (sut, client) = makeSUT()
+
+        var feedItems = [FeedItem]()
+        var jsonItems = [FeedItemsJSON]()
+        
+        for _ in 0..<Int.random(in: 1...10) {
+            let (feedItem, jsonItem) = createMockFeedItemAndJSON()
+            feedItems.append(feedItem)
+            jsonItems.append(jsonItem)
+        }
+        let clientResponse = ["items": jsonItems]
+        
+        expect(sut, toCompleteWith: .success(feedItems), forAction: {
+            let json = try! JSONSerialization.data(withJSONObject: clientResponse)
+            client.complete(with: 200, data: json)
+        })
+    }
+    
+    private func makeJSONResponseObject(items: [FeedItemsJSON]) {
+        
+    }
 }
 
-// MARK: - Helpers
+// MARK: - Spy HTTP Client
 extension RemoteFeedLoaderTests {
     
     private class HTTPClientSpy: HTTPClient {
@@ -103,7 +126,35 @@ extension RemoteFeedLoaderTests {
             messages[index].completion(.success(data, response))
         }
     }
+}
+
+// MARK: - Helper Methods
+extension RemoteFeedLoaderTests {
     
+    // MARK: Mocking FeedItems & JSON
+    typealias FeedItemsJSON = [String: String]
+    
+    private func createMockFeedItemAndJSON() -> (FeedItem, FeedItemsJSON) {
+        let itemID = UUID()
+        // Use first 8 characters of UUID string to append to key-value
+        // pairs (if needed) to mock different values for each feed item
+        let itemSuffixID = itemID.uuidString.prefix(8)
+        
+        let feedItem = FeedItem(id: itemID,
+                                description: Bool.random() ? "Description+\(itemSuffixID)" : nil,
+                                location: Bool.random() ? "Location+\(itemSuffixID)" : nil,
+                                imageURL: URL(string: "https://an-image+\(itemSuffixID)")!)
+        
+        // Create json by removing nil values to mock an API response
+        let jsonItem = ["id": feedItem.id.uuidString,
+                        "image": feedItem.imageURL.absoluteString,
+                        "description": feedItem.description,
+                        "location": feedItem.location].compactMapValues{ $0 }
+        
+        return (feedItem, jsonItem)
+    }
+    
+    // MARK: Configure System Under Test (SUT)
     private typealias SystemUnderTest = (sut: RemoteFeedLoader, client: HTTPClientSpy)
     
     /// Generates a "System Under Test" `RemoteFeedLoader` to be used by `XCTestCase`
@@ -118,7 +169,9 @@ extension RemoteFeedLoaderTests {
         return (sut, client)
     }
     
-    /// Helper method facillitates an error expectation on sut when a provided action is performed
+    // MARK: SUT Test Case Assert Helper
+    /// Generic method facillitates test case assertions for expected result type on sut,
+    /// when an expected result and provided action are passed into method and performed
     private func expect(_ sut: RemoteFeedLoader,
                         toCompleteWith result: RemoteFeedLoader.Result,
                         forAction action: () -> Void,
