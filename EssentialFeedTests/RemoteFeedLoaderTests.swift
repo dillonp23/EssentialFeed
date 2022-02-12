@@ -182,10 +182,26 @@ extension RemoteFeedLoaderTests {
     /// - Returns:
     ///   A tuple containing (1) the `sut` initialized with a `MockHTTPClient` instance,
     ///   and (2) the `client` instance itself in order to perform `XCTest` assertions
-    private func makeSUT(url: URL = URL(string: "https://a-url")!) -> SystemUnderTest {
+    private func makeSUT(url: URL = URL(string: "https://a-url")!,
+                         file: StaticString = #filePath,
+                         line: UInt = #line) -> SystemUnderTest {
         let client = HTTPClientSpy()
         let sut = RemoteFeedLoader(client: client, url: url)
+        
+        assertNoMemoryLeaks(client, objectName: "Client", file: file, line: line)
+        assertNoMemoryLeaks(sut, objectName: "SUT", file: file, line: line)
+        
         return (sut, client)
+    }
+    
+    private func assertNoMemoryLeaks(_ instance: AnyObject,
+                                              objectName: String,
+                                              file: StaticString = #filePath,
+                                              line: UInt = #line) {
+        addTeardownBlock { [weak instance] in
+            let message = "\(objectName) instance should've been deallocated; potential memory leak."
+            XCTAssertNil(instance, message, file: file, line: line)
+        }
     }
     
     // MARK: SUT Test Case Assert Helper
