@@ -7,7 +7,6 @@
 
 import Foundation
 
-
 /// Intermediary used to decouple the `<FeedLoader>` interface from
 /// the specific implementation details of the backend/database API.
 ///
@@ -40,14 +39,15 @@ internal class FeedItemsMapper {
         }
     }
     
-    /// Transform data received from API as `[APIItem]` into the local `[FeedItem]`
-    static func map(_ data: Data,
-                    _ response: HTTPURLResponse) throws -> [FeedItem] {
-        guard response.statusCode == 200 else {
-            throw RemoteFeedLoader.Error.invalidData
-        }
+    /// Transform data received from API as `[APIItem]` into local `[FeedItem]` and
+    /// return to `RemoteFeedLoader.Result` completion or return a failure with error
+    internal static func mapResultFrom(_ data: Data,
+                                       with response: HTTPURLResponse) -> RemoteFeedLoader.Result {
+        guard response.statusCode == 200,
+              let root = try? JSONDecoder().decode(Root.self, from: data) else {
+                  return .failure(.invalidData)
+              }
         
-        let root = try JSONDecoder().decode(Root.self, from: data)
-        return root.feedItems
+        return .success(root.feedItems)
     }
 }
