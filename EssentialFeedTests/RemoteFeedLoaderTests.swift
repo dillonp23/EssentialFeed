@@ -75,11 +75,10 @@ class RemoteFeedLoaderTests: XCTestCase {
     
     func test_load_deliversItemsOn200HTTPResponseWithValidJSON() {
         let (sut, client) = makeSUT()
-        let (feedItems, jsonPayload) = mockFeedItemsAndResponsePayload()
+        let (feedItems, jsonData) = mockFeedItemsAndResponsePayload()
         
         expect(sut, toCompleteWith: .success(feedItems), forAction: {
-            let json = try! JSONSerialization.data(withJSONObject: jsonPayload)
-            client.complete(with: 200, data: json)
+            client.complete(with: 200, data: jsonData)
         })
     }
 }
@@ -120,19 +119,21 @@ extension RemoteFeedLoaderTests {
     
     // MARK: Mocking FeedItems & JSON Response from API
     typealias FeedItemJSON = [String: String]
-    typealias APIResponsePayload = [String: [FeedItemJSON]]
     
-    private func mockFeedItemsAndResponsePayload() -> ([FeedItem], APIResponsePayload) {
+    private func mockFeedItemsAndResponsePayload() -> ([FeedItem], Data) {
         var feedItems = [FeedItem]()
-        var payload = APIResponsePayload()
+        var jsonPayload = [String: [FeedItemJSON]]()
         
         for _ in 0..<Int.random(in: 1...10) {
             let (feedItem, jsonItem) = createMockItemAndJSON()
             feedItems.append(feedItem)
-            payload["items", default: []].append(jsonItem)
+            jsonPayload["items", default: []].append(jsonItem)
         }
+        
+        // convert to data representation to test API response
+        let jsonData = try! JSONSerialization.data(withJSONObject: jsonPayload)
 
-        return (feedItems, payload)
+        return (feedItems, jsonData)
     }
     
     private func createMockItemAndJSON() -> (FeedItem, FeedItemJSON) {
