@@ -81,6 +81,28 @@ class RemoteFeedLoaderTests: XCTestCase {
             client.complete(with: 200, data: jsonData)
         })
     }
+    
+    /// To prevent unexpected behavior, we must assert that the `RemoteFeedLoader`
+    /// objects `load(completion: (Result) -> Void)` method does not send
+    /// a result completion message, in the edge case where `RemoteFeedLoader`
+    /// has already been deallocated, but the client still exists.
+    func test_load_doesNotCompleteWithResultAfterSUTIsDeallocated() {
+        let url = URL(string: "https://deallocationPreventsCompletion")!
+        let client = HTTPClientSpy()
+        var sut: RemoteFeedLoader? = RemoteFeedLoader(client: client, url: url)
+        
+        var capturedResults = [RemoteFeedLoader.Result]()
+        
+        // 1. Send `load(completion:)` method invocations to SUT
+        sut?.load { capturedResults.append($0) }
+        // 2. deallocate SUT
+        sut = nil
+        
+        // 3. call completion with 200 status code on client
+        client.complete(with: 200, data: mockBadData(with: .emptyJSON))
+        
+        XCTAssertTrue(capturedResults.isEmpty)
+    }
 }
 
 // MARK: - Spy HTTP Client
