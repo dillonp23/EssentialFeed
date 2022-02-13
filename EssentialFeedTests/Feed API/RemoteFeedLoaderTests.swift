@@ -38,7 +38,7 @@ class RemoteFeedLoaderTests: XCTestCase {
     func test_load_deliversErrorOnClientError() {
         let (sut, client) = makeSUT()
         
-        expect(sut, toCompleteWith: .failure(RemoteFeedLoader.Error.connectivity), forAction: {
+        expect(sut, toCompleteWith: failWithError(.connectivity), forAction: {
             let clientError = NSError(domain: "Test", code: 0)
             client.complete(with: clientError)
         })
@@ -49,7 +49,7 @@ class RemoteFeedLoaderTests: XCTestCase {
         let statusCodes = [199, 201, 300, 400, 404, 412, 500, 502]
         
         statusCodes.enumerated().forEach { index, code in
-            expect(sut, toCompleteWith: .failure(RemoteFeedLoader.Error.invalidData), forAction: {
+            expect(sut, toCompleteWith: failWithError(.invalidData), forAction: {
                 client.complete(with: code, data: Data(), at: index)
             })
         }
@@ -58,7 +58,7 @@ class RemoteFeedLoaderTests: XCTestCase {
     func test_load_deliversErrorOn200HTTPResponseWithInvalidJSON() {
         let (sut, client) = makeSUT()
         
-        expect(sut, toCompleteWith: .failure(RemoteFeedLoader.Error.invalidData), forAction: {
+        expect(sut, toCompleteWith: failWithError(.invalidData), forAction: {
             let invalidJSON = mockBadData(with: .invalidJSON)
             client.complete(with: 200, data: invalidJSON)
         })
@@ -105,6 +105,7 @@ class RemoteFeedLoaderTests: XCTestCase {
     }
 }
 
+
 // MARK: - Spy HTTP Client
 extension RemoteFeedLoaderTests {
     
@@ -136,10 +137,81 @@ extension RemoteFeedLoaderTests {
     }
 }
 
-// MARK: - Helper Methods
+
+// MARK: - System Under Test (SUT) Configuration
 extension RemoteFeedLoaderTests {
+    private typealias SystemUnderTest = (sut: RemoteFeedLoader, client: HTTPClientSpy)
     
-    // MARK: Mocking FeedItems & JSON Response from API
+    /// Generates a "System Under Test" `RemoteFeedLoader` to be used by `XCTestCase`
+    /// - Parameters:
+    ///    - url: the URL to be used for the `MockHTTPClient` request
+    /// - Returns:
+    ///   A tuple containing (1) the `sut` initialized with a `MockHTTPClient` instance,
+    ///   and (2) the `client` instance itself in order to perform `XCTest` assertions
+    private func makeSUT(url: URL = URL(string: "https://a-url")!,
+                         file: StaticString = #filePath,
+                         line: UInt = #line) -> SystemUnderTest {
+        let client = HTTPClientSpy()
+        let sut = RemoteFeedLoader(client: client, url: url)
+        
+        assertNoMemoryLeaks(client, objectName: "Client", file: file, line: line)
+        assertNoMemoryLeaks(sut, objectName: "SUT", file: file, line: line)
+        
+        return (sut, client)
+    }
+    
+    private func assertNoMemoryLeaks(_ instance: AnyObject,
+                                     objectName: String,
+                                     file: StaticString = #filePath,
+                                     line: UInt = #line) {
+        addTeardownBlock { [weak instance] in
+            let message = "\(objectName) instance should've been deallocated; potential memory leak."
+            XCTAssertNil(instance, message, file: file, line: line)
+        }
+    }
+}
+
+// MARK: - Assertions & Expectations Helpers
+extension RemoteFeedLoaderTests {
+    /// Generic method facillitates test case assertions for expected result type on sut,
+    /// when an expected result and provided action are passed into method and performed
+    private func expect(_ sut: RemoteFeedLoader,
+                        toCompleteWith expectedResult: RemoteFeedLoader.Result,
+                        forAction action: () -> Void,
+                        file: StaticString = #filePath,
+                        line: UInt = #line) {
+        
+        let exp = expectation(description: "Wait for load method completion")
+        sut.load { receivedResult in
+            switch (receivedResult, expectedResult) {
+                case (.success(let receivedItems), .success(let expectedItems)):
+                    XCTAssertEqual(receivedItems, expectedItems, file: file, line: line)
+                    
+                case (.failure(let receivedError as RemoteFeedLoader.Error),
+                      .failure(let expectedError as RemoteFeedLoader.Error)):
+                    XCTAssertEqual(receivedError, expectedError, file: file, line: line)
+                    
+                default:
+                    let message = "Expected result \(expectedResult), got \(receivedResult) instead"
+                    XCTFail(message, file: file, line: line)
+            }
+            exp.fulfill()
+        }
+        
+        action()
+        wait(for: [exp], timeout: 1.0)
+    }
+    
+    /// Helper method that converts a `RemoteFeedLoader.Error` into a
+    /// `RemoteFeedLoader.Result` failure for increased readability in tests
+    private func failWithError(_ error: RemoteFeedLoader.Error) -> RemoteFeedLoader.Result {
+        return .failure(error)
+    }
+}
+
+
+// MARK: Mocking Data (FeedItems) & JSON Responses
+extension RemoteFeedLoaderTests {
     typealias FeedItemJSON = [String: String]
     
     private enum DataError {
@@ -193,68 +265,5 @@ extension RemoteFeedLoaderTests {
                         "location": feedItem.location].compactMapValues{ $0 }
         
         return (feedItem, jsonItem)
-    }
-    
-    // MARK: Configure System Under Test (SUT)
-    private typealias SystemUnderTest = (sut: RemoteFeedLoader, client: HTTPClientSpy)
-    
-    /// Generates a "System Under Test" `RemoteFeedLoader` to be used by `XCTestCase`
-    /// - Parameters:
-    ///    - url: the URL to be used for the `MockHTTPClient` request
-    /// - Returns:
-    ///   A tuple containing (1) the `sut` initialized with a `MockHTTPClient` instance,
-    ///   and (2) the `client` instance itself in order to perform `XCTest` assertions
-    private func makeSUT(url: URL = URL(string: "https://a-url")!,
-                         file: StaticString = #filePath,
-                         line: UInt = #line) -> SystemUnderTest {
-        let client = HTTPClientSpy()
-        let sut = RemoteFeedLoader(client: client, url: url)
-        
-        assertNoMemoryLeaks(client, objectName: "Client", file: file, line: line)
-        assertNoMemoryLeaks(sut, objectName: "SUT", file: file, line: line)
-        
-        return (sut, client)
-    }
-    
-    private func assertNoMemoryLeaks(_ instance: AnyObject,
-                                              objectName: String,
-                                              file: StaticString = #filePath,
-                                              line: UInt = #line) {
-        addTeardownBlock { [weak instance] in
-            let message = "\(objectName) instance should've been deallocated; potential memory leak."
-            XCTAssertNil(instance, message, file: file, line: line)
-        }
-    }
-    
-    // MARK: SUT Test Case Assert Helper
-    /// Generic method facillitates test case assertions for expected result type on sut,
-    /// when an expected result and provided action are passed into method and performed
-    private func expect(_ sut: RemoteFeedLoader,
-                        toCompleteWith expectedResult: RemoteFeedLoader.Result,
-                        forAction action: () -> Void,
-                        file: StaticString = #filePath,
-                        line: UInt = #line) {
-        
-        let exp = expectation(description: "Wait for load method completion")
-        sut.load { receivedResult in
-            switch (receivedResult, expectedResult) {
-                case (.success(let receivedItems), .success(let expectedItems)):
-                    XCTAssertEqual(receivedItems, expectedItems, file: file, line: line)
-                    
-                case (.failure(let receivedError as RemoteFeedLoader.Error),
-                      .failure(let expectedError as RemoteFeedLoader.Error)):
-                    XCTAssertEqual(receivedError, expectedError, file: file, line: line)
-                    
-                default:
-                    let message = "Expected result \(expectedResult), got \(receivedResult) instead"
-                    XCTFail(message, file: file, line: line)
-            }
-            
-            exp.fulfill()
-        }
-        
-        action()
-        
-        wait(for: [exp], timeout: 1.0)
     }
 }
