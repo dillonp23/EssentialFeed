@@ -27,13 +27,22 @@ class URLSessionHTTPClient {
 
 class URLSessionHTTPClientTests: XCTestCase {
     
+    override func setUp() {
+        super.setUp()
+        URLProtocolStub.startInterceptingRequests()
+    }
+    
+    override class func tearDown() {
+        super.tearDown()
+        URLProtocolStub.stopInterceptingRequests()
+    }
+    
     /// If we invoke the `get(from:)` method with a url, then we expect a request
     /// to be executed with the correct url and HTTPMethod.
     ///
     /// This test allows us to determine if there is an issue with the url itself, or if there
     /// is an issue somewhere else (such as with the request or SUT).
     func test_getFromURL_performsGETRequestWithURL() {
-        URLProtocolStub.startInterceptingRequests()
         let url = URL(string: "https://any-url.com")!
         let exp = expectation(description: "Wait for request")
         
@@ -46,11 +55,9 @@ class URLSessionHTTPClientTests: XCTestCase {
         URLSessionHTTPClient().get(from: url) { _ in }
         
         wait(for: [exp], timeout: 1.0)
-        URLProtocolStub.stopInterceptingRequests()
     }
     
     func test_getFromURL_failsWhenURLDoesntMatchObservedRequestURL() {
-        URLProtocolStub.startInterceptingRequests()
         let url = URL(string: "https://a-url.com")!
         let exp = expectation(description: "Wait for request")
         
@@ -64,11 +71,9 @@ class URLSessionHTTPClientTests: XCTestCase {
         URLSessionHTTPClient().get(from: badURL) { _ in }
         
         wait(for: [exp], timeout: 1.0)
-        URLProtocolStub.stopInterceptingRequests()
     }
     
     func test_getFromURL_failsOnRequestError() {
-        URLProtocolStub.startInterceptingRequests()
         let url = URL(string: "https://any-url.com")!
         let error = NSError(domain: "any error", code: 1, userInfo: nil)
         URLProtocolStub.stub(data: nil, response: nil,  error: error)
@@ -87,7 +92,6 @@ class URLSessionHTTPClientTests: XCTestCase {
             exp.fulfill()
         }
         wait(for: [exp], timeout: 1.0)
-        URLProtocolStub.stopInterceptingRequests()
     }
 }
 
