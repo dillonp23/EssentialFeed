@@ -52,7 +52,7 @@ class URLSessionHTTPClientTests: XCTestCase {
             exp.fulfill()
         }
         
-        URLSessionHTTPClient().get(from: url) { _ in }
+        makeSUT().get(from: url) { _ in }
         
         wait(for: [exp], timeout: 1.0)
     }
@@ -68,7 +68,7 @@ class URLSessionHTTPClientTests: XCTestCase {
         }
         
         let badURL = URL(string: "https://a-different-url.com")!
-        URLSessionHTTPClient().get(from: badURL) { _ in }
+        makeSUT().get(from: badURL) { _ in }
         
         wait(for: [exp], timeout: 1.0)
     }
@@ -78,10 +78,9 @@ class URLSessionHTTPClientTests: XCTestCase {
         let error = NSError(domain: "any error", code: 1, userInfo: nil)
         URLProtocolStub.stub(data: nil, response: nil,  error: error)
         
-        let sut = URLSessionHTTPClient()
         let exp = expectation(description: "Wait for completion")
         
-        sut.get(from: url) { result in
+        makeSUT().get(from: url) { result in
             switch result {
                 case .failure(let receivedError as NSError):
                     XCTAssertEqual(error, receivedError.omittingUserInfo)
@@ -92,6 +91,16 @@ class URLSessionHTTPClientTests: XCTestCase {
             exp.fulfill()
         }
         wait(for: [exp], timeout: 1.0)
+    }
+}
+
+
+// MARK: - SUT & Test Helpers
+extension URLSessionHTTPClientTests {
+    // TODO: Change once we implement `HTTPClient` protocol
+    // private func makeSUT() -> HTTPClient
+    private func makeSUT() -> URLSessionHTTPClient {
+        return URLSessionHTTPClient()
     }
 }
 
@@ -161,7 +170,7 @@ extension URLSessionHTTPClientTests {
 }
 
 
-// MARK: - Helpers
+// MARK: - Additional Helpers
 /// This private extension allows us to format errors received back from a `URLSession` to
 /// an `NSError` instance with properties matching the orignally passed in error, to enable
 /// us to compare the two errors for equality in our test case assertions.
