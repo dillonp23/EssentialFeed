@@ -6,6 +6,19 @@
 //
 
 import XCTest
+import EssentialFeed
+
+class URLSessionHTTPClient {
+    private let session: URLSession
+    
+    init(session: URLSession = .shared) {
+        self.session = session
+    }
+    
+    func get(from url: URL, completion: @escaping (HTTPClientResult) -> Void) {
+        session.dataTask(with: url) { _, _, _ in }.resume()
+    }
+}
 
 class URLSessionHTTPClientTests: XCTestCase {
     
