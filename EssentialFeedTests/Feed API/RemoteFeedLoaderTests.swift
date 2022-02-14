@@ -159,16 +159,6 @@ extension RemoteFeedLoaderTests {
         
         return (sut, client)
     }
-    
-    private func assertNoMemoryLeaks(_ instance: AnyObject,
-                                     objectName: String,
-                                     file: StaticString = #filePath,
-                                     line: UInt = #line) {
-        addTeardownBlock { [weak instance] in
-            let message = "\(objectName) instance should've been deallocated; potential memory leak."
-            XCTAssertNil(instance, message, file: file, line: line)
-        }
-    }
 }
 
 // MARK: - Assertions & Expectations Helpers
