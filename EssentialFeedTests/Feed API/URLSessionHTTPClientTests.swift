@@ -21,7 +21,7 @@ class URLSessionHTTPClient {
         session.dataTask(with: url) { data, response, error in
             if let error = error {
                 completion(.failure(error))
-            } else if let data = data, data.count > 0, let response = response as? HTTPURLResponse {
+            } else if let data = data, let response = response as? HTTPURLResponse {
                 completion(.success(data, response))
             } else {
                 completion(.failure(UnexpectedRepresentationError()))
@@ -76,7 +76,6 @@ class URLSessionHTTPClientTests: XCTestCase {
         
         XCTAssertNotNil(resultErrorFor(data: nil, response: nil, error: nil))
         XCTAssertNotNil(resultErrorFor(data: nil, response: urlResponse, error: anyNSError))
-        XCTAssertNotNil(resultErrorFor(data: nil, response: httpURLResponse, error: nil))
         XCTAssertNotNil(resultErrorFor(data: anyData, response: nil, error: nil))
         XCTAssertNotNil(resultErrorFor(data: anyData, response: nil, error: anyNSError))
         XCTAssertNotNil(resultErrorFor(data: nil, response: urlResponse, error: anyNSError))
@@ -98,6 +97,36 @@ class URLSessionHTTPClientTests: XCTestCase {
                     XCTAssertEqual(data, receivedData)
                     XCTAssertEqual(response.url, receivedResponse.url)
                     XCTAssertEqual(response.statusCode, receivedResponse.statusCode)
+                default:
+                    XCTFail("Expected success, got \(result) instead")
+            }
+            
+            exp.fulfill()
+        }
+        
+        wait(for: [exp], timeout: 1.0)
+    }
+    
+    /// An HTTPResponse with nil data is a valid representation case (e.g. 204 status code) that can
+    /// occur in production. When we receive an HTTPResponse with nil data, the compiler replaces the
+    /// nil value with a new instance of `Data` having 0 bytes (i.e. empty data).
+    ///
+    /// We originally made the assumption that this was an invalid representation case and included it in
+    /// the `test_getFromURL_failsOnAllInvalidRepresentationCases()` method. Since
+    /// this is a valid scenario, it needs to be tested as a success case that completes with empty data.
+    func test_getFromURL_suceedsWithEmptyDataOnHTTPURLResponseWithNilData() {
+        let httpURLResponse = anyHTTPURLResponse()
+        URLProtocolStub.stub(data: nil, response: httpURLResponse, error: nil)
+        
+        let exp = expectation(description: "wait for completion")
+        
+        makeSUT().get(from: anyURL()) { result in
+            switch result {
+                case .success(let receivedData, let receivedResponse):
+                    let emptyData = Data()
+                    XCTAssertEqual(emptyData, receivedData)
+                    XCTAssertEqual(httpURLResponse.url, receivedResponse.url)
+                    XCTAssertEqual(httpURLResponse.statusCode, receivedResponse.statusCode)
                 default:
                     XCTFail("Expected success, got \(result) instead")
             }
