@@ -61,13 +61,27 @@ class URLSessionHTTPClientTests: XCTestCase {
     }
     
     func test_getFromURL_failsOnRequestError() {
-        let requestError = NSError(domain: "any error", code: 1, userInfo: nil)
+        let requestError = anyError()
         let receivedError = resultErrorFor(data: nil, response: nil, error: requestError)
         XCTAssertEqual(requestError, receivedError)
     }
     
-    func test_getFromURL_failsOnAllNilValues() {
+    func test_getFromURL_failsOnAllInvalidRepresentationCases() {
+        let urlResponse = makeMockResponse(.nonHTTP)
+        let httpURLResponse = makeMockResponse(.anyHTTP)
+        let anyData = Data("any-data".utf8)
+        let anyError = anyError()
+        
         XCTAssertNotNil(resultErrorFor(data: nil, response: nil, error: nil))
+        XCTAssertNotNil(resultErrorFor(data: nil, response: urlResponse, error: nil))
+        XCTAssertNotNil(resultErrorFor(data: nil, response: httpURLResponse, error: nil))
+        XCTAssertNotNil(resultErrorFor(data: anyData, response: nil, error: nil))
+        XCTAssertNotNil(resultErrorFor(data: anyData, response: nil, error: anyError))
+        XCTAssertNotNil(resultErrorFor(data: nil, response: urlResponse, error: anyError))
+        XCTAssertNotNil(resultErrorFor(data: nil, response: httpURLResponse, error: anyError))
+        XCTAssertNotNil(resultErrorFor(data: anyData, response: urlResponse, error: anyError))
+        XCTAssertNotNil(resultErrorFor(data: anyData, response: httpURLResponse, error: anyError))
+        XCTAssertNotNil(resultErrorFor(data: anyData, response: urlResponse, error: nil))
     }
 }
 
@@ -87,7 +101,25 @@ extension URLSessionHTTPClientTests {
         return URL(string: "https://any-url.com")!
     }
     
-    private func resultErrorFor(data: Data?, response: HTTPURLResponse?, error: Error?,
+    private func anyError() -> NSError {
+        return NSError(domain: "any error", code: 1, userInfo: nil)
+    }
+    
+    private enum ResponseType {
+        case nonHTTP
+        case anyHTTP
+    }
+    
+    private func makeMockResponse(_ type: ResponseType) -> URLResponse? {
+        switch type {
+            case .anyHTTP:
+                return HTTPURLResponse(url: anyURL(), statusCode: 200, httpVersion: nil, headerFields: nil)
+            case .nonHTTP:
+                return URLResponse(url: anyURL(), mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
+        }
+    }
+    
+    private func resultErrorFor(data: Data?, response: URLResponse?, error: Error?,
                                 file: StaticString = #filePath, line: UInt = #line) -> NSError? {
         
         URLProtocolStub.stub(data: data, response: response,  error: error)
