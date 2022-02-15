@@ -67,9 +67,9 @@ class URLSessionHTTPClientTests: XCTestCase {
     }
     
     func test_getFromURL_failsOnAllInvalidRepresentationCases() {
-        let urlResponse = makeMockResponse(.nonHTTP)
-        let httpURLResponse = makeMockResponse(.anyHTTP)
-        let anyData = Data("any-data".utf8)
+        let urlResponse = nonHTTPURLResponse()
+        let httpURLResponse = anyHTTPURLResponse()
+        let anyData = anyData()
         let anyNSError = anyNSError()
         
         XCTAssertNotNil(resultErrorFor(data: nil, response: nil, error: nil))
@@ -95,28 +95,6 @@ extension URLSessionHTTPClientTests {
         let sut = URLSessionHTTPClient()
         assertNoMemoryLeaks(sut, objectName: "SUT", file: file, line: line)
         return sut
-    }
-    
-    private func anyURL() -> URL {
-        return URL(string: "https://any-url.com")!
-    }
-    
-    private func anyNSError() -> NSError {
-        return NSError(domain: "any error", code: 1, userInfo: nil)
-    }
-    
-    private enum ResponseType {
-        case nonHTTP
-        case anyHTTP
-    }
-    
-    private func makeMockResponse(_ type: ResponseType) -> URLResponse? {
-        switch type {
-            case .anyHTTP:
-                return HTTPURLResponse(url: anyURL(), statusCode: 200, httpVersion: nil, headerFields: nil)
-            case .nonHTTP:
-                return URLResponse(url: anyURL(), mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
-        }
     }
     
     private func resultErrorFor(data: Data?, response: URLResponse?, error: Error?,
@@ -205,6 +183,31 @@ extension URLSessionHTTPClientTests {
         }
         
         override func stopLoading() {}
+    }
+}
+
+
+// MARK: - Mocking URLs, Data, Responses, and Errors
+extension URLSessionHTTPClientTests {
+    
+    private func anyURL() -> URL {
+        return URL(string: "https://any-url.com")!
+    }
+    
+    private func anyData() -> Data? {
+        return Data("any-data".utf8)
+    }
+    
+    private func anyHTTPURLResponse() -> HTTPURLResponse {
+        return HTTPURLResponse(url: anyURL(), statusCode: 200, httpVersion: nil, headerFields: nil)!
+    }
+    
+    private func nonHTTPURLResponse() -> URLResponse {
+        return URLResponse(url: anyURL(), mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
+    }
+    
+    private func anyNSError() -> NSError {
+        return NSError(domain: "any error", code: 1, userInfo: nil)
     }
 }
 
