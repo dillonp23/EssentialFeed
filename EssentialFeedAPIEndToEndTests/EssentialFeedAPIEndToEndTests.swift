@@ -15,7 +15,6 @@ class EssentialFeedAPIEndToEndTests: XCTestCase {
         let client = URLSessionHTTPClient()
         let feedLoader = RemoteFeedLoader(client: client, url: testAccountURL)
         
-        
         let exp = expectation(description: "Wait for load completion")
         
         var receivedResult: LoadFeedResult?
@@ -25,6 +24,8 @@ class EssentialFeedAPIEndToEndTests: XCTestCase {
         }
         wait(for: [exp], timeout: 6.0)
         
+        assertNoMemoryLeaks(client, objectName: "End-to-End_URLSessionHTTPClient")
+        assertNoMemoryLeaks(feedLoader, objectName: "End-to-End_RemoteFeedLoader")
         assertReceivedDataMatchesTestData(receivedResult)
     }
     
