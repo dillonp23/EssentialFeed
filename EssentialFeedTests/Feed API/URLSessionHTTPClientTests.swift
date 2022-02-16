@@ -185,8 +185,6 @@ extension URLSessionHTTPClientTests {
         
         // MARK: URLProtocol Pre-Initialization Setup
         override class func canInit(with request: URLRequest) -> Bool {
-            // Invoke the observer each time we receive a request
-            requestObserver?(request)
             return true
         }
         
@@ -196,6 +194,13 @@ extension URLSessionHTTPClientTests {
         
         // MARK: Start & Stop Loading URLProtocool
         override func startLoading() {
+            // If we stubbed an observer, we need to first 1) finish loading, and
+            // 2) invoke the observer w/ the request (fulfilling test expectations)
+            if let requestObserver = URLProtocolStub.requestObserver {
+                // return here so we don't execute the remaining func body
+                return finishLoadingThenInvoke(requestObserver)
+            }
+            
             if let data = URLProtocolStub.stub?.data {
                 client?.urlProtocol(self, didLoad: data)
             }
@@ -209,6 +214,15 @@ extension URLSessionHTTPClientTests {
             }
             
             client?.urlProtocolDidFinishLoading(self)
+        }
+        
+        /// This method guarantees we always finish running a request, before a test can finish
+        /// its execution & return, thus, preventing any data races. If we have stubbed a request
+        /// observer, then we only care about checking that the expected request matches the
+        /// executed (observed) request, i.e. we don't care about the actual result of the request
+        func finishLoadingThenInvoke(_ requestObserver: @escaping (URLRequest) -> Void) {
+            client?.urlProtocolDidFinishLoading(self)
+            requestObserver(request)
         }
         
         override func stopLoading() {}
