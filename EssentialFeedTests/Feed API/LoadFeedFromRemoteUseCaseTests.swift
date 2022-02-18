@@ -1,5 +1,5 @@
 //
-//  RemoteFeedLoaderTests.swift
+//  LoadFeedFromRemoteUseCaseTests.swift
 //  EssentialFeedTests
 //
 //  Created by Dillon on 2/10/22.
@@ -8,7 +8,7 @@
 import XCTest
 import EssentialFeed
 
-class RemoteFeedLoaderTests: XCTestCase {
+class LoadFeedFromRemoteUseCaseTests: XCTestCase {
     
     func test_init_doesNotRequestDataFromURL() {
         let (_, client) = makeSUT()
@@ -107,7 +107,7 @@ class RemoteFeedLoaderTests: XCTestCase {
 
 
 // MARK: - Spy HTTP Client
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     
     private class HTTPClientSpy: HTTPClient {
         var messages = [(url: URL, completion: (HTTPClientResult) -> Void)]()
@@ -139,7 +139,7 @@ extension RemoteFeedLoaderTests {
 
 
 // MARK: - System Under Test (SUT) Configuration
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     private typealias SystemUnderTest = (sut: RemoteFeedLoader, client: HTTPClientSpy)
     
     /// Generates a "System Under Test" `RemoteFeedLoader` to be used by `XCTestCase`
@@ -162,7 +162,7 @@ extension RemoteFeedLoaderTests {
 }
 
 // MARK: - Assertions & Expectations Helpers
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     /// Generic method facillitates test case assertions for expected result type on sut,
     /// when an expected result and provided action are passed into method and performed
     private func expect(_ sut: RemoteFeedLoader,
@@ -201,7 +201,7 @@ extension RemoteFeedLoaderTests {
 
 
 // MARK: Mocking Data (FeedItems) & JSON Responses
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     typealias FeedItemJSON = [String: String]
     
     private enum DataError {
