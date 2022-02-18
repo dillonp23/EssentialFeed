@@ -12,7 +12,7 @@ class EssentialFeedAPIEndToEndTests: XCTestCase {
     
     func test_endToEndTestServerGETFeedResult_matchesFixedTestAccountData() {
         let testAccountURL = URL(string: "https://www.essentialdeveloper.com/s/feed-case-study-test-api-feed.json")!
-        let client = URLSessionHTTPClient()
+        let client = URLSessionHTTPClient(session: URLSession(configuration: .ephemeral))
         let feedLoader = RemoteFeedLoader(client: client, url: testAccountURL)
         
         let exp = expectation(description: "Wait for load completion")
