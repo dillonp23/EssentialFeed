@@ -46,6 +46,7 @@ class FeedStore {
     }
     
     func completeDeletion(error: NSError? = nil, at index: Int = 0) {
+        guard receivedOperations[index].operation == .deleteCachedFeed else { return }
         receivedOperations[index].completion(error)
     }
     
@@ -54,6 +55,7 @@ class FeedStore {
     }
     
     func completeInsertion(error: NSError? = nil, at index: Int = 1) {
+        guard receivedOperations[index].operation != .deleteCachedFeed else { return }
         receivedOperations[index].completion(error)
     }
 }
