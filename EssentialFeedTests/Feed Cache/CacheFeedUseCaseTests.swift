@@ -119,13 +119,15 @@ class CacheFeedUseCaseTests: XCTestCase {
         wait(for: [exp], timeout: 1.0)
         
         XCTAssertEqual(store.receivedOperations.count, 1)
+        XCTAssertEqual(store.receivedOperations[0].operation, .deleteCachedFeed)
         XCTAssertEqual(deletionError, capturedError)
     }
     
     func test_save_failsOnInsertionError() {
+        let timestamp = Date()
         let items = mockUniqueFeedItems()
+        let (sut, store) = makeSUT(currentDate: { timestamp })
         let insertionError = anyNSError()
-        let (sut, store) = makeSUT()
         
         let exp = expectation(description: "Wait for save completion")
         var capturedError: NSError?
@@ -138,7 +140,10 @@ class CacheFeedUseCaseTests: XCTestCase {
         
         wait(for: [exp], timeout: 1.0)
         
+        let orderedOperations = store.receivedOperations.map { $0.operation }
+        
         XCTAssertEqual(store.receivedOperations.count, 2)
+        XCTAssertEqual(orderedOperations, [.deleteCachedFeed, .insert(items, timestamp)])
         XCTAssertEqual(insertionError, capturedError)
     }
     
