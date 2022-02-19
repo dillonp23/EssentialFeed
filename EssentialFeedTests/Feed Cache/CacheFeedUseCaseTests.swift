@@ -19,11 +19,13 @@ class LocalFeedLoader {
     }
     
     func save(_ items: [FeedItem], completion: @escaping (NSError?) -> Void) {
-        store.deleteCachedFeed { [unowned self] error in
-            if let error = error {
+        store.deleteCachedFeed { [unowned self] deletionError in
+            if let error = deletionError {
                 completion(error)
             } else {
-                self.store.insert(items, self.currentDate())
+                self.store.insert(items, self.currentDate()) { insertionError in
+                    completion(insertionError)
+                }
             }
         }
     }
@@ -47,8 +49,12 @@ class FeedStore {
         receivedOperations[index].completion(error)
     }
     
-    func insert(_ items: [FeedItem], _ timestamp: Date, completion: @escaping OperationCompletion = { _ in }) {
+    func insert(_ items: [FeedItem], _ timestamp: Date, completion: @escaping OperationCompletion) {
         receivedOperations.append((.insert(items, timestamp), completion))
+    }
+    
+    func completeInsertion(error: NSError? = nil, at index: Int = 1) {
+        receivedOperations[index].completion(error)
     }
 }
 
@@ -112,6 +118,26 @@ class CacheFeedUseCaseTests: XCTestCase {
         
         XCTAssertEqual(store.receivedOperations.count, 1)
         XCTAssertEqual(deletionError, capturedError)
+    }
+    
+    func test_save_failsOnInsertionError() {
+        let items = mockUniqueFeedItems()
+        let insertionError = anyNSError()
+        let (sut, store) = makeSUT()
+        
+        let exp = expectation(description: "Wait for save completion")
+        var capturedError: NSError?
+        sut.save(items) { error in
+            capturedError = error
+            exp.fulfill()
+        }
+        store.completeDeletion()
+        store.completeInsertion(error: insertionError)
+        
+        wait(for: [exp], timeout: 1.0)
+        
+        XCTAssertEqual(store.receivedOperations.count, 2)
+        XCTAssertEqual(insertionError, capturedError)
     }
     
     
