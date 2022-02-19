@@ -20,12 +20,12 @@ class LocalFeedLoader {
     
     func save(_ items: [FeedItem], completion: @escaping (NSError?) -> Void) {
         store.deleteCachedFeed { [unowned self] deletionError in
-            if let error = deletionError {
-                completion(error)
-            } else {
-                self.store.insert(items, self.currentDate()) { insertionError in
-                    completion(insertionError)
-                }
+            guard deletionError == nil else {
+                return completion(deletionError)
+            }
+            
+            self.store.insert(items, self.currentDate()) { insertionError in
+                completion(insertionError)
             }
         }
     }
@@ -145,6 +145,29 @@ class CacheFeedUseCaseTests: XCTestCase {
         XCTAssertEqual(store.receivedOperations.count, 2)
         XCTAssertEqual(orderedOperations, [.deleteCachedFeed, .insert(items, timestamp)])
         XCTAssertEqual(insertionError, capturedError)
+    }
+    
+    func test_save_succeedsOnSuccessfulCacheInsertion() {
+        let timestamp = Date()
+        let items = mockUniqueFeedItems()
+        let (sut, store) = makeSUT(currentDate: { timestamp })
+        
+        let exp = expectation(description: "Wait for save completion")
+        var capturedError: NSError?
+        sut.save(items) { error in
+            capturedError = error
+            exp.fulfill()
+        }
+        store.completeDeletion()
+        store.completeInsertion()
+        
+        wait(for: [exp], timeout: 1.0)
+        
+        let orderedOperations = store.receivedOperations.map { $0.operation }
+        
+        XCTAssertEqual(store.receivedOperations.count, 2)
+        XCTAssertEqual(orderedOperations, [.deleteCachedFeed, .insert(items, timestamp)])
+        XCTAssertNil(capturedError)
     }
     
     
