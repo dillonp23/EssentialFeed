@@ -19,19 +19,17 @@ class CacheFeedUseCaseTests: XCTestCase {
     
     func test_save_requestsCacheDeletion() {
         let (sut, store) = makeSUT()
-        let items = mockUniqueFeedItems()
         
-        sut.save(items) { _ in }
+        sut.save(mockUniqueFeedItems()) { _ in }
         
         XCTAssertEqual(store.receivedOperations[0].operation, .deleteCachedFeed)
     }
     
     func test_save_doesNotRequestCacheInsertionOnDeletionError() {
         let (sut, store) = makeSUT()
-        let items = mockUniqueFeedItems()
         let deletionError = anyNSError()
         
-        sut.save(items) { _ in }
+        sut.save(mockUniqueFeedItems()) { _ in }
         store.completeDeletion(error: deletionError)
         
         XCTAssertEqual(store.receivedOperations.count, 1)
@@ -40,15 +38,15 @@ class CacheFeedUseCaseTests: XCTestCase {
     
     func test_save_requestsNewCacheInsertionWithTimestampOnSuccessfulDeletion() {
         let timestamp = Date()
-        let items = mockUniqueFeedItems()
+        let feed = mockUniqueFeed()
         let (sut, store) = makeSUT(currentDate: { timestamp })
         
-        sut.save(items) { _ in }
+        sut.save(feed.items) { _ in }
         store.completeDeletion()
         
         XCTAssertEqual(store.receivedOperations.count, 2)
         XCTAssertEqual(store.receivedOperations[0].operation, .deleteCachedFeed)
-        XCTAssertEqual(store.receivedOperations[1].operation, .insert(items, timestamp))
+        XCTAssertEqual(store.receivedOperations[1].operation, .insert(feed.localRepresentation, timestamp))
     }
     
     func test_save_failsOnDeletionError() {
@@ -129,6 +127,7 @@ extension CacheFeedUseCaseTests {
         return (sut, store)
     }
     
+    // MARK: Test Assertions
     private func expect(_ sut: LocalFeedLoader,
                         toCompleteWith expectedError: NSError?,
                         forAction action: () -> Void,
@@ -149,7 +148,7 @@ extension CacheFeedUseCaseTests {
         XCTAssertEqual(expectedError, capturedError, file: file, line: line)
     }
     
-    // Mocking Data & Errors
+    // MARK: Mocking Data & Errors
     private func mockUniqueFeedItems() -> [FeedItem] {
         var items = [FeedItem]()
         
@@ -161,6 +160,18 @@ extension CacheFeedUseCaseTests {
         }
         
         return items
+    }
+    
+    private func mockUniqueFeed() -> (items: [FeedItem], localRepresentation: [LocalFeedItem]) {
+        let items = mockUniqueFeedItems()
+        let localItems = items.map {
+            LocalFeedItem(id: $0.id,
+                          description: $0.description,
+                          location: $0.location,
+                          imageURL: $0.imageURL)
+        }
+        
+        return (items, localItems)
     }
     
     private func anyNSError() -> NSError {
@@ -177,7 +188,7 @@ extension CacheFeedUseCaseTests {
         
         enum Message: Equatable {
             case deleteCachedFeed
-            case insert([FeedItem], Date)
+            case insert([LocalFeedItem], Date)
         }
         
         private(set) var receivedOperations = [(operation: Message, completion: OperationCompletion)]()
@@ -191,7 +202,7 @@ extension CacheFeedUseCaseTests {
             receivedOperations[index].completion(error)
         }
         
-        func insert(_ items: [FeedItem], _ timestamp: Date, completion: @escaping OperationCompletion) {
+        func insert(_ items: [LocalFeedItem], _ timestamp: Date, completion: @escaping OperationCompletion) {
             receivedOperations.append((.insert(items, timestamp), completion))
         }
         
