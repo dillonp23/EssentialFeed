@@ -39,9 +39,9 @@ public class LocalFeedLoader {
     }
     
     public func load(completion: @escaping (LoadResult) -> Void) {
-        store.retrieve { error in
-            if let error = error {
-                completion(.failure(error))
+        store.retrieve { result in
+            if case let .failure(error) = result {
+                return completion(.failure(error))
             }
         }
     }

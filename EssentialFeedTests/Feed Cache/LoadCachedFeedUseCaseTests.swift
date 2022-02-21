@@ -15,6 +15,7 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         let (_, store) = makeSUT()
         
         XCTAssertEqual(store.receivedOperations.count, 0)
+        XCTAssertEqual(store.retrievalMessages.count, 0)
     }
     
     func test_load_requestsCacheRetrieval() {
@@ -22,7 +23,9 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         
         sut.load { _ in }
         
-        XCTAssertEqual(store.receivedOperations[0].operation, .retrieve)
+        XCTAssertEqual(store.receivedOperations.count, 0)
+        XCTAssertEqual(store.retrievalMessages.count, 1)
+        XCTAssertEqual(store.retrievalMessages[0].operation, .retrieve)
     }
     
     func test_load_failsOnCacheRetrievalError() {
@@ -41,7 +44,7 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
             exp.fulfill()
         }
         
-        store.completeRetrieval(error: retrievalError)
+        store.completeRetrievalWith(retrievalError)
         
         wait(for: [exp], timeout: 1.0)
         XCTAssertEqual(retrievalError, capturedError)
