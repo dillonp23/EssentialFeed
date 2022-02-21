@@ -12,7 +12,7 @@ import Foundation
 ///
 /// Use the static `map(_:_:)` method to transform data received into an
 /// array of `[RemoteFeedItem]` and return to `RemoteFeedLoader`
-/// to handle the `[FeedItem]` mapping and result completion
+/// to handle the `[FeedImage]` mapping and result completion
 internal final class RemoteFeedMapper {
     private struct Root: Decodable {
         let items: [RemoteFeedItem]

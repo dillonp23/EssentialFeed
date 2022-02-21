@@ -221,8 +221,8 @@ extension LoadFeedFromRemoteUseCaseTests {
         }
     }
     
-    private func mockFeedItemsAndResponsePayload() -> ([FeedItem], Data) {
-        var feedItems = [FeedItem]()
+    private func mockFeedItemsAndResponsePayload() -> ([FeedImage], Data) {
+        var feedItems = [FeedImage]()
         var jsonPayload = [String: [FeedItemJSON]]()
         
         for _ in 0..<Int.random(in: 1...10) {
@@ -237,20 +237,20 @@ extension LoadFeedFromRemoteUseCaseTests {
         return (feedItems, jsonData)
     }
     
-    private func createMockItemAndJSON() -> (FeedItem, FeedItemJSON) {
+    private func createMockItemAndJSON() -> (FeedImage, FeedItemJSON) {
         let itemID = UUID()
         // Use first 8 characters of UUID string to append to key-value
         // pairs (if needed) to mock different values for each feed item
         let itemSuffixID = itemID.uuidString.prefix(8)
         
-        let feedItem = FeedItem(id: itemID,
+        let feedItem = FeedImage(id: itemID,
                                 description: Bool.random() ? "Description+\(itemSuffixID)" : nil,
                                 location: Bool.random() ? "Location+\(itemSuffixID)" : nil,
-                                imageURL: URL(string: "https://an-image+\(itemSuffixID)")!)
+                                url: URL(string: "https://an-image+\(itemSuffixID)")!)
         
         // Create json by removing nil values to mock an API response
         let jsonItem = ["id": feedItem.id.uuidString,
-                        "image": feedItem.imageURL.absoluteString,
+                        "image": feedItem.url.absoluteString,
                         "description": feedItem.description,
                         "location": feedItem.location].compactMapValues{ $0 }
         

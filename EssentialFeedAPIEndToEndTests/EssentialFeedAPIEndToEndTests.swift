@@ -30,10 +30,10 @@ class EssentialFeedAPIEndToEndTests: XCTestCase {
     }
     
     private func assertReceivedDataMatchesTestData(_ result: LoadFeedResult?, file: StaticString = #filePath, line: UInt = #line) {
-        let failureMessage = "Expected success result with `[FeedItem]`, but got"
+        let failureMessage = "Expected success result with `[FeedImage]`, but got"
         switch result {
-            case .success(let feedItems):
-                assertMockFeedMatchesReceivedFeed(feedItems)
+            case .success(let imageFeed):
+                assertMockFeedMatchesReceived(imageFeed)
             case .failure(let error):
                 XCTFail("\(failureMessage) \(error) instead.")
             default:
@@ -41,28 +41,28 @@ class EssentialFeedAPIEndToEndTests: XCTestCase {
         }
     }
     
-    private func assertMockFeedMatchesReceivedFeed(_ items: [FeedItem]) {
-        XCTAssertEqual(items.count, 8, "Expected 8 feed items returned from test server")
-        assertMockItemMatchesReceived(items[0], atIndex: 0)
-        assertMockItemMatchesReceived(items[1], atIndex: 1)
-        assertMockItemMatchesReceived(items[2], atIndex: 2)
-        assertMockItemMatchesReceived(items[3], atIndex: 3)
-        assertMockItemMatchesReceived(items[4], atIndex: 4)
-        assertMockItemMatchesReceived(items[5], atIndex: 5)
-        assertMockItemMatchesReceived(items[6], atIndex: 6)
-        assertMockItemMatchesReceived(items[7], atIndex: 7)
+    private func assertMockFeedMatchesReceived(_ imageFeed: [FeedImage]) {
+        XCTAssertEqual(imageFeed.count, 8, "Expected 8 feed images returned from test server")
+        assertMockImageMatchesReceived(imageFeed[0], atIndex: 0)
+        assertMockImageMatchesReceived(imageFeed[1], atIndex: 1)
+        assertMockImageMatchesReceived(imageFeed[2], atIndex: 2)
+        assertMockImageMatchesReceived(imageFeed[3], atIndex: 3)
+        assertMockImageMatchesReceived(imageFeed[4], atIndex: 4)
+        assertMockImageMatchesReceived(imageFeed[5], atIndex: 5)
+        assertMockImageMatchesReceived(imageFeed[6], atIndex: 6)
+        assertMockImageMatchesReceived(imageFeed[7], atIndex: 7)
     }
     
-    private func assertMockItemMatchesReceived(_ item: FeedItem, atIndex index: Int, file: StaticString = #filePath, line: UInt = #line) {
-        let mockItem = rawMockData[index]
+    private func assertMockImageMatchesReceived(_ image: FeedImage, atIndex index: Int, file: StaticString = #filePath, line: UInt = #line) {
+        let mockImage = rawMockData[index]
         
-        guard let uuid = UUID(uuidString: mockItem["id"]!), let url = URL(string: mockItem["image"]!) else {
-            XCTFail("Unable to load mock FeedItem from raw data at index \(index)", file: file, line: line)
+        guard let uuid = UUID(uuidString: mockImage["id"]!), let url = URL(string: mockImage["image"]!) else {
+            XCTFail("Unable to load mock FeedImage from raw data at index \(index)", file: file, line: line)
             return
         }
         
-        let expectedItem = FeedItem(id: uuid, description: mockItem["description"], location: mockItem["location"], imageURL: url)
-        XCTAssertEqual(expectedItem, item, file: file, line: line)
+        let expectedImage = FeedImage(id: uuid, description: mockImage["description"], location: mockImage["location"], url: url)
+        XCTAssertEqual(expectedImage, image, file: file, line: line)
     }
     
     
