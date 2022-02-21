@@ -37,7 +37,12 @@ class FeedStoreSpy: FeedStore {
         receivedOperations[index].completion(error)
     }
     
-    func retrieve() {
-        receivedOperations.append((.retrieve, { _ in }))
+    func retrieve(completion: @escaping OperationCompletion) {
+        receivedOperations.append((.retrieve, completion))
+    }
+    
+    func completeRetrieval(error: Error? = nil, at index: Int = 0) {
+        guard receivedOperations[index].operation == .retrieve else { return }
+        receivedOperations[index].completion(error)
     }
 }
