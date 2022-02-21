@@ -16,6 +16,14 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         
         XCTAssertEqual(store.receivedOperations.count, 0)
     }
+    
+    func test_load_requestsCacheRetrieval() {
+        let (sut, store) = makeSUT()
+        
+        sut.load()
+        
+        XCTAssertEqual(store.receivedOperations[0].operation, .retrieve)
+    }
 }
 
 extension LoadCachedFeedUseCaseTests {
