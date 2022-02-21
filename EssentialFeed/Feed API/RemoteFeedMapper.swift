@@ -35,10 +35,3 @@ internal final class RemoteFeedMapper {
         return try JSONDecoder().decode(Root.self, from: data)
     }
 }
-
-struct RemoteFeedItem: Decodable {
-    let id: UUID
-    let description: String?
-    let location: String?
-    let image: URL
-}
