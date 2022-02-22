@@ -10,7 +10,7 @@ import EssentialFeed
 
 class FeedStoreSpy: FeedStore {
     typealias OperationCompletion = (Error?) -> Void
-    typealias RetrievalCompletion = (Result<[LocalFeedImage]?, Error>) -> Void
+    typealias RetrievalCompletion = (Result<[LocalFeedImage], Error>) -> Void
     
     enum Message: Equatable {
         case deleteCachedFeed
@@ -49,8 +49,8 @@ class FeedStoreSpy: FeedStore {
         retrievalMessages[index].completion(.failure(error))
     }
     
-    func completeRetrievalSuccessfully(at index: Int = 0) {
+    func completeRetrievalSuccessfully(with feed: [LocalFeedImage] = [], at index: Int = 0) {
         guard retrievalMessages[index].operation == .retrieve else { return }
-        retrievalMessages[index].completion(.success(nil))
+        retrievalMessages[index].completion(.success(feed))
     }
 }

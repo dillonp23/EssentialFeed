@@ -44,6 +44,15 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
             store.completeRetrievalSuccessfully()
         })
     }
+    
+    func test_load_deliversImagesOnRetrievalSuccessWithNonEmptyCache() {
+        let (sut, store) = makeSUT()
+        let feed = mockUniqueFeedWithLocalRep()
+        
+        expect(sut, toCompleteWith: .success(feed.images), forAction: {
+            store.completeRetrievalSuccessfully(with: feed.localRepresentation)
+        })
+    }
 }
 
 extension LoadCachedFeedUseCaseTests {
@@ -56,10 +65,6 @@ extension LoadCachedFeedUseCaseTests {
         assertNoMemoryLeaks(sut, objectName: "LocalFeedLoader_Cache", file: file, line: line)
         
         return (sut, store)
-    }
-    
-    private func anyNSError() -> NSError {
-        return NSError(domain: "any error", code: 1, userInfo: nil)
     }
     
     private func expect(_ sut: LocalFeedLoader,
@@ -85,5 +90,35 @@ extension LoadCachedFeedUseCaseTests {
         
         action()
         wait(for: [exp], timeout: 1.0)
+    }
+    
+    // MARK: Mocking Data & Errors
+    private func mockUniqueImageFeed() -> [FeedImage] {
+        var images = [FeedImage]()
+        
+        for i in 1...3 {
+            images.append(FeedImage(id: UUID(),
+                                    description: "a description \(i)",
+                                    location: "a location \(i)",
+                                    url: URL(string: "http://an-imageURL.com?id=\(i)")!))
+        }
+        
+        return images
+    }
+    
+    private func mockUniqueFeedWithLocalRep() -> (images: [FeedImage], localRepresentation: [LocalFeedImage]) {
+        let images = mockUniqueImageFeed()
+        let localImages = images.map {
+            LocalFeedImage(id: $0.id,
+                           description: $0.description,
+                           location: $0.location,
+                           url: $0.url)
+        }
+        
+        return (images, localImages)
+    }
+    
+    private func anyNSError() -> NSError {
+        return NSError(domain: "any error", code: 1, userInfo: nil)
     }
 }
