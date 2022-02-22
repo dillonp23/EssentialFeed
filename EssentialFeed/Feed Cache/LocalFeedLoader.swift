@@ -10,6 +10,7 @@ import Foundation
 public class LocalFeedLoader {
     private let store: FeedStore
     private let currentDate: () -> Date
+    private let calendar = Calendar(identifier: .gregorian)
     
     public typealias SaveResult = Error?
     public typealias LoadResult = LoadFeedResult
@@ -42,21 +43,30 @@ public class LocalFeedLoader {
         store.retrieve { [unowned self] result in
             
             switch result {
-                case let .found(feed, timestamp):
-                    let cal = Calendar(identifier: .gregorian)
-                    let expirationTimestamp = cal.date(byAdding: .day, value: -7, to: self.currentDate())!
-                    
-                    if timestamp > expirationTimestamp {
-                        completion(.success(feed.modelRepresentation))
-                    } else {
-                        completion(.success([]))
-                    }
+                case let .found(feed, timestamp) where hasNotExpired(timestamp):
+                    completion(.success(feed.modelRepresentation))
                 case let .failure(error):
                     completion(.failure(error))
-                case .empty:
+                case .found, .empty:
                     completion(.success([]))
             }
         }
+    }
+    
+    private func hasNotExpired(_ timestamp: Date) -> Bool {
+        guard let expiration = expirationTimestamp else {
+            return false
+        }
+        return cachedDate(timestamp, isMoreRecentThan: expiration)
+    }
+    
+    // MARK: Date Comparison Helpers
+    private var expirationTimestamp: Date? {
+        return calendar.date(byAdding: .day, value: -7, to: currentDate())
+    }
+    
+    private func cachedDate(_ timestamp: Date, isMoreRecentThan expiration: Date) -> Bool {
+        return timestamp > expiration
     }
 }
 
