@@ -14,8 +14,7 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
     func test_init_doesNotDeliverLoadMessageUponCreation() {
         let (_, store) = makeSUT()
         
-        XCTAssertEqual(store.receivedOperations.count, 0)
-        XCTAssertEqual(store.retrievalMessages.count, 0)
+        XCTAssertEqual(store.receivedMessages, [])
     }
     
     func test_load_requestsCacheRetrieval() {
@@ -23,9 +22,7 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         
         sut.load { _ in }
         
-        XCTAssertEqual(store.receivedOperations.count, 0)
-        XCTAssertEqual(store.retrievalMessages.count, 1)
-        XCTAssertEqual(store.retrievalMessages[0].operation, .retrieve)
+        XCTAssertEqual(store.receivedMessages, [.retrieve])
     }
     
     func test_load_failsOnCacheRetrievalError() {

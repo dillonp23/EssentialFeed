@@ -14,7 +14,7 @@ class CacheFeedUseCaseTests: XCTestCase {
     func test_init_doesNotMessageStoreUponCreation() {
         let (_, store) = makeSUT()
         
-        XCTAssertEqual(store.receivedOperations.count, 0)
+        XCTAssertEqual(store.receivedMessages, [])
     }
     
     func test_save_requestsCacheDeletion() {
@@ -22,7 +22,7 @@ class CacheFeedUseCaseTests: XCTestCase {
         
         sut.save(mockUniqueImageFeed()) { _ in }
         
-        XCTAssertEqual(store.receivedOperations[0].operation, .deleteCachedFeed)
+        XCTAssertEqual(store.receivedMessages, [.deleteCachedFeed])
     }
     
     func test_save_doesNotRequestCacheInsertionOnDeletionError() {
@@ -31,9 +31,8 @@ class CacheFeedUseCaseTests: XCTestCase {
         
         sut.save(mockUniqueImageFeed()) { _ in }
         store.completeDeletion(error: deletionError)
-        
-        XCTAssertEqual(store.receivedOperations.count, 1)
-        XCTAssertEqual(store.receivedOperations[0].operation, .deleteCachedFeed)
+
+        XCTAssertEqual(store.receivedMessages, [.deleteCachedFeed])
     }
     
     func test_save_requestsNewCacheInsertionWithTimestampOnSuccessfulDeletion() {
@@ -44,9 +43,7 @@ class CacheFeedUseCaseTests: XCTestCase {
         sut.save(feed.images) { _ in }
         store.completeDeletion()
         
-        XCTAssertEqual(store.receivedOperations.count, 2)
-        XCTAssertEqual(store.receivedOperations[0].operation, .deleteCachedFeed)
-        XCTAssertEqual(store.receivedOperations[1].operation, .insert(feed.localRepresentation, timestamp))
+        XCTAssertEqual(store.receivedMessages, [.deleteCachedFeed, .insert(feed.localRepresentation, timestamp)])
     }
     
     func test_save_failsOnDeletionError() {
@@ -55,7 +52,6 @@ class CacheFeedUseCaseTests: XCTestCase {
         
         expect(sut, toCompleteWith: deletionError, forAction: {
             store.completeDeletion(error: deletionError)
-            XCTAssertEqual(store.receivedOperations.count, 1)
         })
     }
     
@@ -66,7 +62,6 @@ class CacheFeedUseCaseTests: XCTestCase {
         expect(sut, toCompleteWith: insertionError, forAction: {
             store.completeDeletion()
             store.completeInsertion(error: insertionError)
-            XCTAssertEqual(store.receivedOperations.count, 2)
         })
     }
     
@@ -76,7 +71,6 @@ class CacheFeedUseCaseTests: XCTestCase {
         expect(sut, toCompleteWith: nil, forAction: {
             store.completeDeletion()
             store.completeInsertion()
-            XCTAssertEqual(store.receivedOperations.count, 2)
         })
     }
     
