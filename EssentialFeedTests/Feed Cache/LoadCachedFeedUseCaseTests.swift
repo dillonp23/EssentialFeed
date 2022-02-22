@@ -69,6 +69,19 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
             store.completeRetrievalSuccessfully(with: feed.localRepresentation, timestamp: cacheExpiration)
         })
     }
+    
+    func test_load_deliversEmptyFeedOnRetrievalSuccessForMoreThanSevenDayOldCache() {
+        let fixedCurrentDate = Date()
+        let cacheExpiration = fixedCurrentDate.adding(days: -7)
+        let moreThanSevenDays = cacheExpiration.adding(seconds: -1)
+        
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+        let feed = mockUniqueFeedWithLocalRep()
+        
+        expect(sut, toCompleteWith: .success([]), forAction: {
+            store.completeRetrievalSuccessfully(with: feed.localRepresentation, timestamp: moreThanSevenDays)
+        })
+    }
 }
 
 extension LoadCachedFeedUseCaseTests {
