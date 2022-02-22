@@ -46,6 +46,7 @@ public class LocalFeedLoader {
                 case let .found(feed, timestamp) where hasNotExpired(timestamp):
                     completion(.success(feed.modelRepresentation))
                 case let .failure(error):
+                    store.deleteCachedFeed { _ in }
                     completion(.failure(error))
                 case .found, .empty:
                     completion(.success([]))
