@@ -98,6 +98,20 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
             XCTAssertEqual(store.receivedMessages, [.retrieve])
         })
     }
+    
+    func test_load_doesNotRequestDeletionOfLessThanSevenDayOldCache() {
+        let fixedCurrentDate = Date()
+        let cacheExpiration = fixedCurrentDate.adding(days: -7)
+        let maxValidCacheAge = cacheExpiration.adding(seconds: 1)
+        
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+        let feed = mockUniqueFeedWithLocalRep()
+        
+        expect(sut, toCompleteWith: .success(feed.images), forAction: {
+            store.completeRetrievalSuccessfully(with: feed.localRepresentation, timestamp: maxValidCacheAge)
+            XCTAssertEqual(store.receivedMessages, [.retrieve])
+        })
+    }
 }
 
 extension LoadCachedFeedUseCaseTests {
