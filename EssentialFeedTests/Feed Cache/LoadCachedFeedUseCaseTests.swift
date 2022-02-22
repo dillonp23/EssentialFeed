@@ -84,19 +84,19 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         let (sut, store) = makeSUT()
         let retrievalError = anyNSError()
         
-        expect(sut, toCompleteWith: .failure(retrievalError), forAction: {
-            store.completeRetrievalWithFailure(retrievalError)
-            XCTAssertEqual(store.receivedMessages, [.retrieve, .deleteCachedFeed])
-        })
+        sut.load { _ in }
+        store.completeRetrievalWithFailure(retrievalError)
+        
+        XCTAssertEqual(store.receivedMessages, [.retrieve, .deleteCachedFeed])
     }
     
     func test_load_doesNotRequestDeletionOnSuccessfulRetrievalWithEmptyCache() {
         let (sut, store) = makeSUT()
         
-        expect(sut, toCompleteWith: .success([]), forAction: {
-            store.completeRetrievalSuccessfully(with: [])
-            XCTAssertEqual(store.receivedMessages, [.retrieve])
-        })
+        sut.load { _ in }
+        store.completeRetrievalSuccessfully(with: [])
+        
+        XCTAssertEqual(store.receivedMessages, [.retrieve])
     }
     
     func test_load_doesNotRequestDeletionOfLessThanSevenDayOldCache() {
@@ -107,10 +107,23 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
         let feed = mockUniqueFeedWithLocalRep()
         
-        expect(sut, toCompleteWith: .success(feed.images), forAction: {
-            store.completeRetrievalSuccessfully(with: feed.localRepresentation, timestamp: maxValidCacheAge)
-            XCTAssertEqual(store.receivedMessages, [.retrieve])
-        })
+        sut.load { _ in }
+        store.completeRetrievalSuccessfully(with: feed.localRepresentation, timestamp: maxValidCacheAge)
+        
+        XCTAssertEqual(store.receivedMessages, [.retrieve])
+    }
+    
+    func test_load_requestsDeletionOfExactlySevenDayOldCache() {
+        let fixedCurrentDate = Date()
+        let cacheExpiration = fixedCurrentDate.adding(days: -7)
+        
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+        let feed = mockUniqueFeedWithLocalRep()
+        
+        sut.load { _ in }
+        store.completeRetrievalSuccessfully(with: feed.localRepresentation, timestamp: cacheExpiration)
+        
+        XCTAssertEqual(store.receivedMessages, [.retrieve, .deleteCachedFeed])
     }
 }
 
