@@ -48,13 +48,20 @@ public class LocalFeedLoader {
                 case let .found(feed, timestamp) where self.hasNotExpired(timestamp):
                     completion(.success(feed.modelRepresentation))
                 case let .failure(error):
-                    self.store.deleteCachedFeed { _ in }
                     completion(.failure(error))
                 default:
                     if case .found = result {
                         self.store.deleteCachedFeed { _ in }
                     }
                     completion(.success([]))
+            }
+        }
+    }
+    
+    public func validateCache() {
+        store.retrieve { [unowned self] result in
+            if case .failure = result {
+                self.store.deleteCachedFeed { _ in }
             }
         }
     }
