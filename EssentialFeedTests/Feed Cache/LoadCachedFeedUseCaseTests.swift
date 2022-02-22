@@ -33,7 +33,7 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         let retrievalError = anyNSError()
         
         expect(sut, toCompleteWith: .failure(retrievalError), forAction: {
-            store.completeRetrievalWith(retrievalError)
+            store.completeRetrievalWithFailure(retrievalError)
         })
     }
     
@@ -41,16 +41,20 @@ class LoadCachedFeedUseCaseTests: XCTestCase {
         let (sut, store) = makeSUT()
         
         expect(sut, toCompleteWith: .success([]), forAction: {
-            store.completeRetrievalSuccessfully()
+            store.completeRetrievalSuccessfully(with: [])
         })
     }
     
-    func test_load_deliversImagesOnRetrievalSuccessWithNonEmptyCache() {
-        let (sut, store) = makeSUT()
+    func test_load_deliversImagesOnRetrievalSuccessForLessThanSevenDayOldCache() {
+        let fixedCurrentDate = Date()
+        let cacheExpiration = fixedCurrentDate.adding(days: -7)
+        let maxValidCacheAge = cacheExpiration.adding(seconds: 1)
+        
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
         let feed = mockUniqueFeedWithLocalRep()
         
         expect(sut, toCompleteWith: .success(feed.images), forAction: {
-            store.completeRetrievalSuccessfully(with: feed.localRepresentation)
+            store.completeRetrievalSuccessfully(with: feed.localRepresentation, timestamp: maxValidCacheAge)
         })
     }
 }
@@ -120,5 +124,16 @@ extension LoadCachedFeedUseCaseTests {
     
     private func anyNSError() -> NSError {
         return NSError(domain: "any error", code: 1, userInfo: nil)
+    }
+}
+
+private extension Date {
+    func adding(days: Int) -> Self {
+        return Calendar(identifier: .gregorian)
+            .date(byAdding: .day, value: days, to: self)!
+    }
+    
+    func adding(seconds: TimeInterval) -> Self {
+        return self.addingTimeInterval(seconds)
     }
 }

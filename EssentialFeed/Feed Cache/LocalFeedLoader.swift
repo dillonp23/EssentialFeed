@@ -39,12 +39,22 @@ public class LocalFeedLoader {
     }
     
     public func load(completion: @escaping (LoadResult) -> Void) {
-        store.retrieve { result in
+        store.retrieve { [unowned self] result in
+            
             switch result {
-                case let .success(feed):
-                    completion(.success(feed.modelRepresentation))
+                case let .found(feed, timestamp):
+                    let cal = Calendar(identifier: .gregorian)
+                    let expirationTimestamp = cal.date(byAdding: .day, value: -7, to: self.currentDate())!
+                    
+                    if timestamp > expirationTimestamp {
+                        completion(.success(feed.modelRepresentation))
+                    } else {
+                        completion(.success([]))
+                    }
                 case let .failure(error):
                     completion(.failure(error))
+                case .empty:
+                    completion(.success([]))
             }
         }
     }

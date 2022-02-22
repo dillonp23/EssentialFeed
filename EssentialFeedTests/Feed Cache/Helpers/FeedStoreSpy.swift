@@ -9,8 +9,8 @@ import Foundation
 import EssentialFeed
 
 class FeedStoreSpy: FeedStore {
-    typealias OperationCompletion = (Error?) -> Void
-    typealias RetrievalCompletion = (Result<[LocalFeedImage], Error>) -> Void
+    typealias OperationCompletion = FeedStore.OperationCompletion
+    typealias RetrievalCompletion = FeedStore.RetrievalCompletion
     
     enum Message: Equatable {
         case deleteCachedFeed
@@ -44,13 +44,18 @@ class FeedStoreSpy: FeedStore {
         retrievalMessages.append((.retrieve, completion))
     }
     
-    func completeRetrievalWith(_ error: Error, at index: Int = 0) {
+    func completeRetrievalWithFailure(_ error: Error, at index: Int = 0) {
         guard retrievalMessages[index].operation == .retrieve else { return }
         retrievalMessages[index].completion(.failure(error))
     }
     
-    func completeRetrievalSuccessfully(with feed: [LocalFeedImage] = [], at index: Int = 0) {
+    func completeRetrievalSuccessfully(with feed: [LocalFeedImage], timestamp: Date = .now, at index: Int = 0) {
         guard retrievalMessages[index].operation == .retrieve else { return }
-        retrievalMessages[index].completion(.success(feed))
+        
+        if feed.isEmpty {
+            return retrievalMessages[index].completion(.empty)
+        }
+        
+        retrievalMessages[index].completion(.found(feed: feed, timestamp: timestamp))
     }
 }
