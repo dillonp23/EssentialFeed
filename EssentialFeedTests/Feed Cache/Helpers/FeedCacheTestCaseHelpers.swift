@@ -33,7 +33,26 @@ func mockUniqueFeedWithLocalRep() -> (images: [FeedImage], localRepresentation: 
     return (images, localImages)
 }
 
+enum FeedCacheStatus {
+    case notExpired
+    case atTimeOfExpiration
+    case expired
+}
+
 extension Date {
+    func feedCacheTimestamp(for status: FeedCacheStatus) -> Self {
+        let cacheExpiration = self.adding(days: -7)
+        
+        switch status {
+            case .notExpired:
+                return cacheExpiration.adding(seconds: 1)
+            case .atTimeOfExpiration:
+                return cacheExpiration
+            case .expired:
+                return cacheExpiration.adding(seconds: -1)
+        }
+    }
+    
     func adding(days: Int) -> Self {
         return Calendar(identifier: .gregorian)
             .date(byAdding: .day, value: days, to: self)!
