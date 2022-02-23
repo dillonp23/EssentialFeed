@@ -41,7 +41,7 @@ enum FeedCacheStatus {
 
 extension Date {
     func feedCacheTimestamp(for status: FeedCacheStatus) -> Self {
-        let cacheExpiration = self.adding(days: -7)
+        let cacheExpiration = self.adding(days: -maxCacheAgeInDays)
         
         switch status {
             case .notExpired:
@@ -53,12 +53,16 @@ extension Date {
         }
     }
     
-    func adding(days: Int) -> Self {
+    private var maxCacheAgeInDays: Int {
+        return 7
+    }
+    
+    private func adding(days: Int) -> Self {
         return Calendar(identifier: .gregorian)
             .date(byAdding: .day, value: days, to: self)!
     }
     
-    func adding(seconds: TimeInterval) -> Self {
+    private func adding(seconds: TimeInterval) -> Self {
         return self.addingTimeInterval(seconds)
     }
 }
