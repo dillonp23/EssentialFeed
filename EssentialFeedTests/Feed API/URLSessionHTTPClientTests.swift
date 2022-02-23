@@ -232,11 +232,6 @@ extension URLSessionHTTPClientTests {
 
 // MARK: - Mocking URLs, Data, Responses, and Errors
 extension URLSessionHTTPClientTests {
-    
-    private func anyURL() -> URL {
-        return URL(string: "https://any-url.com")!
-    }
-    
     private func anyData() -> Data? {
         return Data("any-data".utf8)
     }
@@ -247,10 +242,6 @@ extension URLSessionHTTPClientTests {
     
     private func nonHTTPURLResponse() -> URLResponse {
         return URLResponse(url: anyURL(), mimeType: nil, expectedContentLength: 0, textEncodingName: nil)
-    }
-    
-    private func anyNSError() -> NSError {
-        return NSError(domain: "any error", code: 1, userInfo: nil)
     }
 }
 

@@ -1,5 +1,5 @@
 //
-//  RemoteFeedLoaderTests.swift
+//  LoadFeedFromRemoteUseCaseTests.swift
 //  EssentialFeedTests
 //
 //  Created by Dillon on 2/10/22.
@@ -8,7 +8,7 @@
 import XCTest
 import EssentialFeed
 
-class RemoteFeedLoaderTests: XCTestCase {
+class LoadFeedFromRemoteUseCaseTests: XCTestCase {
     
     func test_init_doesNotRequestDataFromURL() {
         let (_, client) = makeSUT()
@@ -107,7 +107,7 @@ class RemoteFeedLoaderTests: XCTestCase {
 
 
 // MARK: - Spy HTTP Client
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     
     private class HTTPClientSpy: HTTPClient {
         var messages = [(url: URL, completion: (HTTPClientResult) -> Void)]()
@@ -139,7 +139,7 @@ extension RemoteFeedLoaderTests {
 
 
 // MARK: - System Under Test (SUT) Configuration
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     private typealias SystemUnderTest = (sut: RemoteFeedLoader, client: HTTPClientSpy)
     
     /// Generates a "System Under Test" `RemoteFeedLoader` to be used by `XCTestCase`
@@ -162,7 +162,7 @@ extension RemoteFeedLoaderTests {
 }
 
 // MARK: - Assertions & Expectations Helpers
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     /// Generic method facillitates test case assertions for expected result type on sut,
     /// when an expected result and provided action are passed into method and performed
     private func expect(_ sut: RemoteFeedLoader,
@@ -201,7 +201,7 @@ extension RemoteFeedLoaderTests {
 
 
 // MARK: Mocking Data (FeedItems) & JSON Responses
-extension RemoteFeedLoaderTests {
+extension LoadFeedFromRemoteUseCaseTests {
     typealias FeedItemJSON = [String: String]
     
     private enum DataError {
@@ -221,8 +221,8 @@ extension RemoteFeedLoaderTests {
         }
     }
     
-    private func mockFeedItemsAndResponsePayload() -> ([FeedItem], Data) {
-        var feedItems = [FeedItem]()
+    private func mockFeedItemsAndResponsePayload() -> ([FeedImage], Data) {
+        var feedItems = [FeedImage]()
         var jsonPayload = [String: [FeedItemJSON]]()
         
         for _ in 0..<Int.random(in: 1...10) {
@@ -237,20 +237,20 @@ extension RemoteFeedLoaderTests {
         return (feedItems, jsonData)
     }
     
-    private func createMockItemAndJSON() -> (FeedItem, FeedItemJSON) {
+    private func createMockItemAndJSON() -> (FeedImage, FeedItemJSON) {
         let itemID = UUID()
         // Use first 8 characters of UUID string to append to key-value
         // pairs (if needed) to mock different values for each feed item
         let itemSuffixID = itemID.uuidString.prefix(8)
         
-        let feedItem = FeedItem(id: itemID,
+        let feedItem = FeedImage(id: itemID,
                                 description: Bool.random() ? "Description+\(itemSuffixID)" : nil,
                                 location: Bool.random() ? "Location+\(itemSuffixID)" : nil,
-                                imageURL: URL(string: "https://an-image+\(itemSuffixID)")!)
+                                url: URL(string: "https://an-image+\(itemSuffixID)")!)
         
         // Create json by removing nil values to mock an API response
         let jsonItem = ["id": feedItem.id.uuidString,
-                        "image": feedItem.imageURL.absoluteString,
+                        "image": feedItem.url.absoluteString,
                         "description": feedItem.description,
                         "location": feedItem.location].compactMapValues{ $0 }
         
