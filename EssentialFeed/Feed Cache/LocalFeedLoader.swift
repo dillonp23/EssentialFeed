@@ -7,17 +7,33 @@
 
 import Foundation
 
+enum FeedCachePolicy {
+    enum Status {
+        case expired
+        case notExpired
+    }
+    
+    private static let calendar = Calendar(identifier: .gregorian)
+    private static let maxCacheAgeInDays = 7
+    
+    static func validateExpirationStatus(for timestamp: Date, against currentDate: Date) -> Status {
+        guard let expiration = calendar.date(byAdding: .day, value: -maxCacheAgeInDays, to: currentDate) else {
+            preconditionFailure("`CacheValidationPolicy` error: Unable to get expiration timestamp from \(currentDate)")
+        }
+        
+        return timestamp <= expiration ? .expired : .notExpired
+    }
+}
+
 public class LocalFeedLoader: FeedLoader {
     private let store: FeedStore
     private let currentDate: () -> Date
-    private let calendar = Calendar(identifier: .gregorian)
     
     public init(store: FeedStore, currentDate: @escaping () -> Date) {
         self.store = store
         self.currentDate = currentDate
     }
     
-    // MARK: Cache Age Validation & Helpers
     public func validateCache() {
         store.retrieve { [weak self] result in
             guard let self = self else { return }
@@ -25,7 +41,7 @@ public class LocalFeedLoader: FeedLoader {
             switch result {
                 case .failure:
                     self.store.deleteCachedFeed { _ in }
-                case let .found(_, timestamp) where self.isExpired(timestamp):
+                case let .found(_, timestamp) where self.statusFor(timestamp) == .expired:
                     self.store.deleteCachedFeed { _ in }
                 case .found, .empty:
                     break
@@ -33,22 +49,8 @@ public class LocalFeedLoader: FeedLoader {
         }
     }
     
-    private func hasNotExpired(_ timestamp: Date) -> Bool {
-        guard let expiration = expirationTimestamp else {
-            return false
-        }
-        return timestamp > expiration
-    }
-    
-    private func isExpired(_ timestamp: Date) -> Bool {
-        guard let expiration = expirationTimestamp else {
-            return false
-        }
-        return timestamp <= expiration
-    }
-    
-    private var expirationTimestamp: Date? {
-        return calendar.date(byAdding: .day, value: -7, to: currentDate())
+    private func statusFor(_ timestamp: Date) -> FeedCachePolicy.Status {
+        return FeedCachePolicy.validateExpirationStatus(for: timestamp, against: currentDate())
     }
 }
 
@@ -84,7 +86,7 @@ extension LocalFeedLoader {
             guard let self = self else { return }
             
             switch result {
-                case let .found(feed, timestamp) where self.hasNotExpired(timestamp):
+                case let .found(feed, timestamp) where self.statusFor(timestamp) == .notExpired:
                     completion(.success(feed.modelRepresentation))
                 case let .failure(error):
                     completion(.failure(error))
