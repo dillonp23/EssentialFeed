@@ -141,34 +141,4 @@ extension CacheFeedUseCaseTests {
         
         XCTAssertEqual(expectedError, capturedError, file: file, line: line)
     }
-    
-    // MARK: Mocking Data & Errors
-    private func mockUniqueImageFeed() -> [FeedImage] {
-        var images = [FeedImage]()
-        
-        for i in 1...3 {
-            images.append(FeedImage(id: UUID(),
-                                  description: "a description \(i)",
-                                  location: "a location \(i)",
-                                  url: URL(string: "http://an-imageURL.com?id=\(i)")!))
-        }
-        
-        return images
-    }
-    
-    private func mockUniqueFeedWithLocalRep() -> (images: [FeedImage], localRepresentation: [LocalFeedImage]) {
-        let images = mockUniqueImageFeed()
-        let localImages = images.map {
-            LocalFeedImage(id: $0.id,
-                          description: $0.description,
-                          location: $0.location,
-                          url: $0.url)
-        }
-        
-        return (images, localImages)
-    }
-    
-    private func anyNSError() -> NSError {
-        return NSError(domain: "any error", code: 1, userInfo: nil)
-    }
 }
