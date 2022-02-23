@@ -49,7 +49,7 @@ public class LocalFeedLoader {
                     completion(.success(feed.modelRepresentation))
                 case let .failure(error):
                     completion(.failure(error))
-                default:
+                case .found, .empty:
                     completion(.success([]))
             }
         }
@@ -62,28 +62,31 @@ public class LocalFeedLoader {
             switch result {
                 case .failure:
                     self.store.deleteCachedFeed { _ in }
-                case let .found(_, timestamp) where !self.hasNotExpired(timestamp):
+                case let .found(_, timestamp) where self.isExpired(timestamp):
                     self.store.deleteCachedFeed { _ in }
-                case .empty, .found:
+                case .found, .empty:
                     break
             }
         }
     }
     
+    // MARK: Cache Age Validation Helpers
     private func hasNotExpired(_ timestamp: Date) -> Bool {
         guard let expiration = expirationTimestamp else {
             return false
         }
-        return cachedDate(timestamp, isMoreRecentThan: expiration)
+        return timestamp > expiration
     }
     
-    // MARK: Date Comparison Helpers
+    private func isExpired(_ timestamp: Date) -> Bool {
+        guard let expiration = expirationTimestamp else {
+            return false
+        }
+        return timestamp <= expiration
+    }
+    
     private var expirationTimestamp: Date? {
         return calendar.date(byAdding: .day, value: -7, to: currentDate())
-    }
-    
-    private func cachedDate(_ timestamp: Date, isMoreRecentThan expiration: Date) -> Bool {
-        return timestamp > expiration
     }
 }
 
