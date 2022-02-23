@@ -20,6 +20,42 @@ public class LocalFeedLoader {
         self.currentDate = currentDate
     }
     
+    // MARK: Cache Age Validation & Helpers
+    public func validateCache() {
+        store.retrieve { [weak self] result in
+            guard let self = self else { return }
+            
+            switch result {
+                case .failure:
+                    self.store.deleteCachedFeed { _ in }
+                case let .found(_, timestamp) where self.isExpired(timestamp):
+                    self.store.deleteCachedFeed { _ in }
+                case .found, .empty:
+                    break
+            }
+        }
+    }
+    
+    private func hasNotExpired(_ timestamp: Date) -> Bool {
+        guard let expiration = expirationTimestamp else {
+            return false
+        }
+        return timestamp > expiration
+    }
+    
+    private func isExpired(_ timestamp: Date) -> Bool {
+        guard let expiration = expirationTimestamp else {
+            return false
+        }
+        return timestamp <= expiration
+    }
+    
+    private var expirationTimestamp: Date? {
+        return calendar.date(byAdding: .day, value: -7, to: currentDate())
+    }
+}
+
+extension LocalFeedLoader {
     public func save(_ feed: [FeedImage], completion: @escaping (SaveResult) -> Void) {
         store.deleteCachedFeed { [weak self] deletionError in
             guard let self = self else { return }
@@ -38,7 +74,9 @@ public class LocalFeedLoader {
             completion(insertionError)
         }
     }
-    
+}
+
+extension LocalFeedLoader {
     public func load(completion: @escaping (LoadResult) -> Void) {
         store.retrieve { [weak self] result in
             
@@ -53,40 +91,6 @@ public class LocalFeedLoader {
                     completion(.success([]))
             }
         }
-    }
-    
-    public func validateCache() {
-        store.retrieve { [weak self] result in
-            guard let self = self else { return }
-            
-            switch result {
-                case .failure:
-                    self.store.deleteCachedFeed { _ in }
-                case let .found(_, timestamp) where self.isExpired(timestamp):
-                    self.store.deleteCachedFeed { _ in }
-                case .found, .empty:
-                    break
-            }
-        }
-    }
-    
-    // MARK: Cache Age Validation Helpers
-    private func hasNotExpired(_ timestamp: Date) -> Bool {
-        guard let expiration = expirationTimestamp else {
-            return false
-        }
-        return timestamp > expiration
-    }
-    
-    private func isExpired(_ timestamp: Date) -> Bool {
-        guard let expiration = expirationTimestamp else {
-            return false
-        }
-        return timestamp <= expiration
-    }
-    
-    private var expirationTimestamp: Date? {
-        return calendar.date(byAdding: .day, value: -7, to: currentDate())
     }
 }
 
