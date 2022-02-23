@@ -50,9 +50,6 @@ public class LocalFeedLoader {
                 case let .failure(error):
                     completion(.failure(error))
                 default:
-                    if case .found = result {
-                        self.store.deleteCachedFeed { _ in }
-                    }
                     completion(.success([]))
             }
         }
@@ -60,8 +57,13 @@ public class LocalFeedLoader {
     
     public func validateCache() {
         store.retrieve { [unowned self] result in
-            if case .failure = result {
-                self.store.deleteCachedFeed { _ in }
+            switch result {
+                case .failure:
+                    self.store.deleteCachedFeed { _ in }
+                case let .found(_, timestamp) where !hasNotExpired(timestamp):
+                    self.store.deleteCachedFeed { _ in }
+                case .empty, .found:
+                    break
             }
         }
     }
