@@ -11,8 +11,33 @@ import XCTest
 
 class CodableFeedStore {
     private struct Cache: Codable {
-        let feed: [LocalFeedImage]
+        let feed: [CodableFeedImage]
         let timestamp: Date
+        
+        struct CodableFeedImage: Codable {
+            let id: UUID
+            let description: String?
+            let location: String?
+            let url: URL
+        }
+        
+        var localFeedRepresentation: [LocalFeedImage] {
+            feed.map {
+                LocalFeedImage(id: $0.id,
+                               description: $0.description,
+                               location: $0.location,
+                               url: $0.url)
+            }
+        }
+        
+        static func makeCodable(_ localFeed: [LocalFeedImage]) -> [CodableFeedImage] {
+            localFeed.map {
+                CodableFeedImage(id: $0.id,
+                                 description: $0.description,
+                                 location: $0.location,
+                                 url: $0.url)
+            }
+        }
     }
     
     private let storeURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
@@ -22,12 +47,13 @@ class CodableFeedStore {
             return completion(.empty)
         }
         
-        let decodedCache = try! JSONDecoder().decode(Cache.self, from: data)
-        completion(.found(feed: decodedCache.feed, timestamp: decodedCache.timestamp))
+        let cache = try! JSONDecoder().decode(Cache.self, from: data)
+        completion(.found(feed: cache.localFeedRepresentation, timestamp: cache.timestamp))
     }
     
     func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping FeedStore.OperationCompletion) {
-        let encodedCache = try! JSONEncoder().encode(Cache(feed: feed, timestamp: timestamp))
+        let codableFeed = Cache.makeCodable(feed)
+        let encodedCache = try! JSONEncoder().encode(Cache(feed: codableFeed, timestamp: timestamp))
         try! encodedCache.write(to: storeURL)
         completion(nil)
     }
@@ -37,7 +63,7 @@ class CodableFeedStoreTests: XCTestCase {
     
     override func setUp() {
         super.setUp()
-
+        
         let storeURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
         try? FileManager.default.removeItem(at: storeURL)
     }
@@ -50,7 +76,7 @@ class CodableFeedStoreTests: XCTestCase {
     }
     
     func test_retrieve_deliversEmptyOnEmptyCache() {
-        let sut = CodableFeedStore()
+        let sut = makeSUT()
         let exp = expectation(description: "Wait for retrieval completion")
         
         sut.retrieve { result in
@@ -67,7 +93,7 @@ class CodableFeedStoreTests: XCTestCase {
     }
     
     func test_retrieve_hasNoSideEffectsOnEmptyCache() {
-        let sut = CodableFeedStore()
+        let sut =  makeSUT()
         let exp = expectation(description: "Wait for retrieval completion")
         
         sut.retrieve { firstResult in
@@ -91,7 +117,7 @@ class CodableFeedStoreTests: XCTestCase {
     func test_retrieveAfterInsertingToEmptyCache_deliversInsertedValues() {
         let localFeed = mockUniqueFeedWithLocalRep().localRepresentation
         let validTimestamp = Date().feedCacheTimestamp(for: .notExpired)
-        let sut = CodableFeedStore()
+        let sut =  makeSUT()
         
         let exp = expectation(description: "Wait for retrieval completion")
         
@@ -111,5 +137,10 @@ class CodableFeedStoreTests: XCTestCase {
         }
         
         wait(for: [exp], timeout: 1.0)
+    }
+    
+    // MARK: Helpers
+    private func makeSUT() -> CodableFeedStore {
+        return CodableFeedStore()
     }
 }
