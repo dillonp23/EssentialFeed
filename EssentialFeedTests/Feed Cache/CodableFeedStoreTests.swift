@@ -10,37 +10,11 @@ import EssentialFeed
 import XCTest
 
 class CodableFeedStore {
-    private struct Cache: Codable {
-        let feed: [CodableFeedImage]
-        let timestamp: Date
-        
-        struct CodableFeedImage: Codable {
-            let id: UUID
-            let description: String?
-            let location: String?
-            let url: URL
-        }
-        
-        var localFeedRepresentation: [LocalFeedImage] {
-            feed.map {
-                LocalFeedImage(id: $0.id,
-                               description: $0.description,
-                               location: $0.location,
-                               url: $0.url)
-            }
-        }
-        
-        static func makeCodable(_ localFeed: [LocalFeedImage]) -> [CodableFeedImage] {
-            localFeed.map {
-                CodableFeedImage(id: $0.id,
-                                 description: $0.description,
-                                 location: $0.location,
-                                 url: $0.url)
-            }
-        }
-    }
+    private let storeURL: URL
     
-    private let storeURL = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("image-feed.store")
+    init(storeURL: URL) {
+        self.storeURL = storeURL
+    }
     
     func retrieve(completion: @escaping FeedStore.RetrievalCompletion) {
         guard let data = try? Data(contentsOf: storeURL) else {
@@ -56,6 +30,36 @@ class CodableFeedStore {
         let encodedCache = try! JSONEncoder().encode(Cache(feed: codableFeed, timestamp: timestamp))
         try! encodedCache.write(to: storeURL)
         completion(nil)
+    }
+}
+
+private struct Cache: Codable {
+    let feed: [CodableFeedImage]
+    let timestamp: Date
+    
+    struct CodableFeedImage: Codable {
+        let id: UUID
+        let description: String?
+        let location: String?
+        let url: URL
+    }
+    
+    var localFeedRepresentation: [LocalFeedImage] {
+        feed.map {
+            LocalFeedImage(id: $0.id,
+                           description: $0.description,
+                           location: $0.location,
+                           url: $0.url)
+        }
+    }
+    
+    static func makeCodable(_ localFeed: [LocalFeedImage]) -> [CodableFeedImage] {
+        localFeed.map {
+            CodableFeedImage(id: $0.id,
+                             description: $0.description,
+                             location: $0.location,
+                             url: $0.url)
+        }
     }
 }
 
@@ -141,6 +145,8 @@ class CodableFeedStoreTests: XCTestCase {
     
     // MARK: Helpers
     private func makeSUT() -> CodableFeedStore {
-        return CodableFeedStore()
+        let sut = CodableFeedStore(storeURL: FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first!.appendingPathComponent("image-feed.store"))
+        assertNoMemoryLeaks(sut, objectName: "`CodableFeedStore`")
+        return sut
     }
 }
