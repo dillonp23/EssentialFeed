@@ -138,14 +138,44 @@ class CodableFeedStoreTests: XCTestCase {
         
         wait(for: [exp], timeout: 1.0)
     }
+    
+    func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
+        let localFeed = mockUniqueFeedWithLocalRep().localRepresentation
+        let validTimestamp = Date().feedCacheTimestamp(for: .notExpired)
+        let sut =  makeSUT()
+        
+        let exp = expectation(description: "Wait for retrieval completion")
+        
+        sut.insert(localFeed, validTimestamp) { insertionError in
+            XCTAssertNil(insertionError)
+            
+            sut.retrieve { firstResult in
+                sut.retrieve { secondResult in
+                    switch (firstResult, secondResult) {
+                        case let (.found(firstFeed, firstTimestamp), .found(secondFeed, secondTimestamp)):
+                            XCTAssertEqual(firstFeed, localFeed)
+                            XCTAssertEqual(firstTimestamp, validTimestamp)
+                            
+                            XCTAssertEqual(firstFeed, secondFeed)
+                            XCTAssertEqual(firstTimestamp, secondTimestamp)
+                        default:
+                            XCTFail("Expected both results to match `insert()` params, got (\(firstResult), \(secondResult)) instead.")
+                    }
+                    exp.fulfill()
+                }
+            }
+        }
+        
+        wait(for: [exp], timeout: 1.0)
+    }
 }
 
 
 // MARK: Helpers
 extension CodableFeedStoreTests {
-    private func makeSUT() -> CodableFeedStore {
+    private func makeSUT(file: StaticString = #filePath, line: UInt = #line) -> CodableFeedStore {
         let sut = CodableFeedStore(storeURL: testSpecificStoreURL)
-        assertNoMemoryLeaks(sut, objectName: "`CodableFeedStore`")
+        assertNoMemoryLeaks(sut, objectName: "`CodableFeedStore`", file: file, line: line)
         return sut
     }
     
