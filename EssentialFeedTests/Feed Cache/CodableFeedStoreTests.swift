@@ -43,6 +43,10 @@ class CodableFeedStore {
             completion(error)
         }
     }
+    
+    func deleteCachedFeed(completion: @escaping OperationCompletion) {
+        completion(nil)
+    }
 }
 
 private struct Cache: Codable {
@@ -154,6 +158,21 @@ class CodableFeedStoreTests: XCTestCase {
         
         let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
         XCTAssertNotNil(insertionError, "Expected insertion using an invalidURL to fail with error")
+    }
+    
+    func test_delete_hasNoSideEffectsOnEmptyCache() {
+        let sut = makeSUT()
+        let exp = expectation(description: "Wait for deletion completion")
+        
+        var capturedError: Error?
+        sut.deleteCachedFeed { error in
+            capturedError = error
+            exp.fulfill()
+        }
+        
+        wait(for: [exp], timeout: 1.0)
+        XCTAssertNil(capturedError)
+        expect(sut, toCompleteRetrievalWith: .empty)
     }
 }
 
