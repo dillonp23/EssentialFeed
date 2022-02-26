@@ -112,19 +112,25 @@ class CodableFeedStoreTests: XCTestCase {
     }
     
     func test_retrieve_deliversFailureOnRetrievalError() {
-        let sut = makeSUT()
+        let storeURL = testSpecificStoreURL
+        let sut = makeSUT(storeURL: storeURL)
         
-        try! "invalid data".write(to: testSpecificStoreURL, atomically: false, encoding: .utf8)
+        try! "invalid data".write(to: storeURL, atomically: false, encoding: .utf8)
         
-        expect(sut, toCompleteRetrievalTwiceWith: .failure(anyNSError()))
+        expect(sut, toCompleteRetrievalWith: .failure(anyNSError()))
     }
 }
 
 
-// MARK: - Helpers
 extension CodableFeedStoreTests {
-    private func makeSUT(file: StaticString = #filePath, line: UInt = #line) -> CodableFeedStore {
-        let sut = CodableFeedStore(storeURL: testSpecificStoreURL)
+    // MARK: Setup & Teardown
+    private func clearTestCacheArtifacts() {
+        try? FileManager.default.removeItem(at: testSpecificStoreURL)
+    }
+    
+    // MARK: Helpers
+    private func makeSUT(storeURL: URL? = nil, file: StaticString = #filePath, line: UInt = #line) -> CodableFeedStore {
+        let sut = CodableFeedStore(storeURL: storeURL ?? testSpecificStoreURL)
         assertNoMemoryLeaks(sut, objectName: "`CodableFeedStore`", file: file, line: line)
         return sut
     }
@@ -132,11 +138,6 @@ extension CodableFeedStoreTests {
     private var testSpecificStoreURL: URL {
         FileManager.default.urls(for: .cachesDirectory,
                                     in: .userDomainMask).first!.appendingPathComponent("\(type(of: self)).store")
-    }
-    
-    // MARK: Setup & Teardown
-    private func clearTestCacheArtifacts() {
-        try? FileManager.default.removeItem(at: testSpecificStoreURL)
     }
     
     private func expect(_ sut: CodableFeedStore,
