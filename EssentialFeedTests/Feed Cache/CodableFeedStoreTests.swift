@@ -45,7 +45,16 @@ class CodableFeedStore {
     }
     
     func deleteCachedFeed(completion: @escaping OperationCompletion) {
-        completion(nil)
+        guard FileManager.default.fileExists(atPath: storeURL.path) else {
+            return completion(nil)
+        }
+        
+        do {
+            try FileManager.default.removeItem(at: storeURL)
+            completion(nil)
+        } catch {
+            completion(error)
+        }
     }
 }
 
@@ -164,14 +173,32 @@ class CodableFeedStoreTests: XCTestCase {
         let sut = makeSUT()
         let exp = expectation(description: "Wait for deletion completion")
         
-        var capturedError: Error?
+        var deletionError: Error?
         sut.deleteCachedFeed { error in
-            capturedError = error
+            deletionError = error
             exp.fulfill()
         }
         
         wait(for: [exp], timeout: 1.0)
-        XCTAssertNil(capturedError)
+        XCTAssertNil(deletionError, "Expected to delete cache successfully but got \(deletionError!)")
+        expect(sut, toCompleteRetrievalWith: .empty)
+    }
+    
+    func test_delete_emptiesPreviouslyInsertedCache() {
+        let sut = makeSUT()
+        
+        let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
+        XCTAssertNil(insertionError, "Expected to insert cache successfully but got \(insertionError!)")
+        
+        let exp = expectation(description: "Wait for deletion completion")
+        var deletionError: Error?
+        sut.deleteCachedFeed { error in
+            deletionError = error
+            exp.fulfill()
+        }
+        
+        wait(for: [exp], timeout: 1.0)
+        XCTAssertNil(deletionError, "Expected to delete cache successfully but got \(deletionError!)")
         expect(sut, toCompleteRetrievalWith: .empty)
     }
 }
