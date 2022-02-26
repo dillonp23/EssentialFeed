@@ -172,10 +172,7 @@ class CodableFeedStoreTests: XCTestCase {
     func test_delete_hasNoSideEffectsOnEmptyCache() {
         let sut = makeSUT()
         
-        let deletionError = deleteCache(from: sut)
-        XCTAssertNil(deletionError, "Expected empty cache deletion to succeed but got \(deletionError!)")
-        
-        expect(sut, toCompleteRetrievalWith: .empty)
+        expect(sut, toCompleteDeletionWith: nil, failedAssertMessage: "Expected empty cache deletion to succeed")
     }
     
     func test_delete_emptiesPreviouslyInsertedCache() {
@@ -183,21 +180,16 @@ class CodableFeedStoreTests: XCTestCase {
         
         let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
         XCTAssertNil(insertionError, "Expected to insert cache successfully but got \(insertionError!)")
-        
-        let deletionError = deleteCache(from: sut)
-        XCTAssertNil(deletionError, "Expected non-empty cache deletion to succeed but got \(deletionError!)")
-        
-        expect(sut, toCompleteRetrievalWith: .empty)
+       
+        expect(sut, toCompleteDeletionWith: nil, failedAssertMessage: "Expected non-empty cache deletion to succeed")
     }
     
     func test_delete_deliversErrorOnDeletionError() {
-        let noDeletePermissionsURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let noDeletePermissionsURL = cachesDirectory
         let sut = makeSUT(storeURL: noDeletePermissionsURL)
+        let failMessage = "Expected cache deletion to fail for lack of permission at url"
         
-        let deletionError = deleteCache(from: sut)
-        XCTAssertNotNil(deletionError, "Expected cache deletion to fail for lack of permission at url")
-        
-        expect(sut, toCompleteRetrievalWith: .empty)
+        expect(sut, toCompleteDeletionWith: anyNSError(), failedAssertMessage: failMessage)
     }
 }
 
@@ -216,8 +208,11 @@ extension CodableFeedStoreTests {
     }
     
     private var testSpecificStoreURL: URL {
-        FileManager.default.urls(for: .cachesDirectory,
-                                    in: .userDomainMask).first!.appendingPathComponent("\(type(of: self)).store")
+        cachesDirectory.appendingPathComponent("\(type(of: self)).store")
+    }
+    
+    private var cachesDirectory: URL {
+        FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
     
     private func expect(_ sut: CodableFeedStore,
@@ -248,6 +243,22 @@ extension CodableFeedStoreTests {
                         line: UInt = #line) {
         expect(sut, toCompleteRetrievalWith: expectedResult, file: file, line: line)
         expect(sut, toCompleteRetrievalWith: expectedResult, file: file, line: line)
+    }
+    
+    private func expect(_ sut: CodableFeedStore,
+                        toCompleteDeletionWith expectedError: NSError?,
+                        failedAssertMessage: String,
+                        file: StaticString = #filePath,
+                        line: UInt = #line) {
+        let deletionError = deleteCache(from: sut)
+        
+        if expectedError == nil {
+            XCTAssertNil(deletionError, "\(failedAssertMessage) but got \(deletionError!)", file: file, line: line)
+        } else {
+            XCTAssertNotNil(deletionError, failedAssertMessage, file: file, line: line)
+        }
+        
+        expect(sut, toCompleteRetrievalWith: .empty, file: file, line: line)
     }
     
     @discardableResult
