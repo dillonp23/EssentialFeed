@@ -97,18 +97,18 @@ class CodableFeedStoreTests: XCTestCase {
     
     func test_retrieve_deliversFoundValuesOnNonEmptyCache() {
         let sut =  makeSUT()
-        let mockCache = mockNonExpiredLocalFeed()
+        let cache = mockNonExpiredLocalFeed()
         
-        insert(mockCache, to: sut)
-        expect(sut, toCompleteRetrievalWith: .found(feed: mockCache.feed, timestamp: mockCache.timestamp))
+        insert(cache, to: sut)
+        expect(sut, toCompleteRetrievalWith: .found(feed: cache.feed, timestamp: cache.timestamp))
     }
     
     func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
         let sut =  makeSUT()
-        let mockCache = mockNonExpiredLocalFeed()
+        let cache = mockNonExpiredLocalFeed()
         
-        insert(mockCache, to: sut)
-        expect(sut, toCompleteRetrievalTwiceWith: .found(feed: mockCache.feed, timestamp: mockCache.timestamp))
+        insert(cache, to: sut)
+        expect(sut, toCompleteRetrievalTwiceWith: .found(feed: cache.feed, timestamp: cache.timestamp))
     }
     
     func test_retrieve_deliversFailureOnRetrievalError() {
@@ -127,6 +127,21 @@ class CodableFeedStoreTests: XCTestCase {
         try! "invalid data".write(to: storeURL, atomically: false, encoding: .utf8)
         
         expect(sut, toCompleteRetrievalTwiceWith: .failure(anyNSError()))
+    }
+    
+    func test_insert_overridesPreviouslyInsertedCacheValues() {
+        let sut = makeSUT()
+        let oldCache = mockNonExpiredLocalFeed()
+        
+        let firstInsertionError = insert(oldCache, to: sut)
+        XCTAssertNil(firstInsertionError, "Expected to insert cache successfully but got \(firstInsertionError!)")
+        
+        let newCache = mockNonExpiredLocalFeed()
+        
+        let secondInsertionError = insert(newCache, to: sut)
+        XCTAssertNil(secondInsertionError, "Expected to override cache successfully but got \(secondInsertionError!)")
+        
+        expect(sut, toCompleteRetrievalWith: .found(feed: newCache.feed, timestamp: newCache.timestamp))
     }
 }
 
@@ -179,13 +194,16 @@ extension CodableFeedStoreTests {
         expect(sut, toCompleteRetrievalWith: expectedResult, file: file, line: line)
     }
     
-    private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date), to sut: CodableFeedStore)  {
+    @discardableResult
+    private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date), to sut: CodableFeedStore) -> Error? {
         let exp = expectation(description: "Wait for retrieval completion")
+        var error: Error?
         sut.insert(cache.feed, cache.timestamp) { insertionError in
-            XCTAssertNil(insertionError)
+            error = insertionError
             exp.fulfill()
         }
         wait(for: [exp], timeout: 1.0)
+        return error
     }
     
     private func mockNonExpiredLocalFeed() -> (feed: [LocalFeedImage], timestamp: Date) {
