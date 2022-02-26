@@ -91,34 +91,20 @@ class CodableFeedStoreTests: XCTestCase {
         expect(sut, toCompleteRetrievalTwiceWith: .empty)
     }
     
-    func test_retrieveAfterInsertingToEmptyCache_deliversInsertedValues() {
+    func test_retrieve_deliversFoundValuesOnNonEmptyCache() {
         let sut =  makeSUT()
-        let localFeed = mockUniqueFeedWithLocalRep().localRepresentation
-        let validTimestamp = Date().feedCacheTimestamp(for: .notExpired)
+        let mockCache = mockNonExpiredLocalFeed()
         
-        let exp = expectation(description: "Wait for insertion completion")
-        sut.insert(localFeed, validTimestamp) { insertionError in
-            XCTAssertNil(insertionError)
-            exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-        
-        expect(sut, toCompleteRetrievalWith: .found(feed: localFeed, timestamp: validTimestamp))
+        insert(mockCache, to: sut)
+        expect(sut, toCompleteRetrievalWith: .found(feed: mockCache.feed, timestamp: mockCache.timestamp))
     }
     
     func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
         let sut =  makeSUT()
-        let localFeed = mockUniqueFeedWithLocalRep().localRepresentation
-        let validTimestamp = Date().feedCacheTimestamp(for: .notExpired)
+        let mockCache = mockNonExpiredLocalFeed()
         
-        let exp = expectation(description: "Wait for retrieval completion")
-        sut.insert(localFeed, validTimestamp) { insertionError in
-            XCTAssertNil(insertionError)
-            exp.fulfill()
-        }
-        wait(for: [exp], timeout: 1.0)
-        
-        expect(sut, toCompleteRetrievalTwiceWith: .found(feed: localFeed, timestamp: validTimestamp))
+        insert(mockCache, to: sut)
+        expect(sut, toCompleteRetrievalTwiceWith: .found(feed: mockCache.feed, timestamp: mockCache.timestamp))
     }
 }
 
@@ -169,5 +155,20 @@ extension CodableFeedStoreTests {
                         line: UInt = #line) {
         expect(sut, toCompleteRetrievalWith: expectedResult, file: file, line: line)
         expect(sut, toCompleteRetrievalWith: expectedResult, file: file, line: line)
+    }
+    
+    private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date), to sut: CodableFeedStore)  {
+        let exp = expectation(description: "Wait for retrieval completion")
+        sut.insert(cache.feed, cache.timestamp) { insertionError in
+            XCTAssertNil(insertionError)
+            exp.fulfill()
+        }
+        wait(for: [exp], timeout: 1.0)
+    }
+    
+    private func mockNonExpiredLocalFeed() -> (feed: [LocalFeedImage], timestamp: Date) {
+        let localFeed = mockUniqueFeedWithLocalRep().localRepresentation
+        let validTimestamp = Date().feedCacheTimestamp(for: .notExpired)
+        return (localFeed, validTimestamp)
     }
 }
