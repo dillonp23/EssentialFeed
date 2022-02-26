@@ -189,6 +189,16 @@ class CodableFeedStoreTests: XCTestCase {
         
         expect(sut, toCompleteRetrievalWith: .empty)
     }
+    
+    func test_delete_deliversErrorOnDeletionError() {
+        let noDeletePermissionsURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
+        let sut = makeSUT(storeURL: noDeletePermissionsURL)
+        
+        let deletionError = deleteCache(from: sut)
+        XCTAssertNotNil(deletionError, "Expected cache deletion to fail for lack of permission at url")
+        
+        expect(sut, toCompleteRetrievalWith: .empty)
+    }
 }
 
 
