@@ -171,16 +171,10 @@ class CodableFeedStoreTests: XCTestCase {
     
     func test_delete_hasNoSideEffectsOnEmptyCache() {
         let sut = makeSUT()
-        let exp = expectation(description: "Wait for deletion completion")
         
-        var deletionError: Error?
-        sut.deleteCachedFeed { error in
-            deletionError = error
-            exp.fulfill()
-        }
+        let deletionError = deleteCache(from: sut)
+        XCTAssertNil(deletionError, "Expected empty cache deletion to succeed but got \(deletionError!)")
         
-        wait(for: [exp], timeout: 1.0)
-        XCTAssertNil(deletionError, "Expected to delete cache successfully but got \(deletionError!)")
         expect(sut, toCompleteRetrievalWith: .empty)
     }
     
@@ -190,15 +184,9 @@ class CodableFeedStoreTests: XCTestCase {
         let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
         XCTAssertNil(insertionError, "Expected to insert cache successfully but got \(insertionError!)")
         
-        let exp = expectation(description: "Wait for deletion completion")
-        var deletionError: Error?
-        sut.deleteCachedFeed { error in
-            deletionError = error
-            exp.fulfill()
-        }
+        let deletionError = deleteCache(from: sut)
+        XCTAssertNil(deletionError, "Expected non-empty cache deletion to succeed but got \(deletionError!)")
         
-        wait(for: [exp], timeout: 1.0)
-        XCTAssertNil(deletionError, "Expected to delete cache successfully but got \(deletionError!)")
         expect(sut, toCompleteRetrievalWith: .empty)
     }
 }
@@ -255,13 +243,25 @@ extension CodableFeedStoreTests {
     @discardableResult
     private func insert(_ cache: (feed: [LocalFeedImage], timestamp: Date), to sut: CodableFeedStore) -> Error? {
         let exp = expectation(description: "Wait for retrieval completion")
-        var error: Error?
-        sut.insert(cache.feed, cache.timestamp) { insertionError in
-            error = insertionError
+        var insertionError: Error?
+        sut.insert(cache.feed, cache.timestamp) { error in
+            insertionError = error
             exp.fulfill()
         }
         wait(for: [exp], timeout: 1.0)
-        return error
+        return insertionError
+    }
+    
+    private func deleteCache(from sut: CodableFeedStore) -> Error? {
+        let exp = expectation(description: "Wait for deletion completion")
+        var deletionError: Error?
+        sut.deleteCachedFeed { error in
+            deletionError = error
+            exp.fulfill()
+        }
+        
+        wait(for: [exp], timeout: 1.0)
+        return deletionError
     }
     
     private func mockNonExpiredLocalFeed() -> (feed: [LocalFeedImage], timestamp: Date) {
