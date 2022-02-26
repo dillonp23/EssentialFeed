@@ -34,10 +34,14 @@ class CodableFeedStore {
     }
     
     func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
-        let codableFeed = Cache.makeCodable(feed)
-        let encodedCache = try! JSONEncoder().encode(Cache(feed: codableFeed, timestamp: timestamp))
-        try! encodedCache.write(to: storeURL)
-        completion(nil)
+        do {
+            let codableFeed = Cache.makeCodable(feed)
+            let encodedCache = try JSONEncoder().encode(Cache(feed: codableFeed, timestamp: timestamp))
+            try encodedCache.write(to: storeURL)
+            completion(nil)
+        } catch {
+            completion(error)
+        }
     }
 }
 
@@ -142,6 +146,14 @@ class CodableFeedStoreTests: XCTestCase {
         XCTAssertNil(secondInsertionError, "Expected to override cache successfully but got \(secondInsertionError!)")
         
         expect(sut, toCompleteRetrievalWith: .found(feed: newCache.feed, timestamp: newCache.timestamp))
+    }
+    
+    func test_insert_deliversErrorOnFailedInsertion() {
+        let invalidURL = URL(string: "invalid://store-url")
+        let sut = makeSUT(storeURL: invalidURL)
+        
+        let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
+        XCTAssertNotNil(insertionError, "Expected insertion using an invalidURL to fail with error")
     }
 }
 
