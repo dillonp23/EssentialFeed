@@ -112,6 +112,36 @@ class CodableFeedStoreTests: XCTestCase {
         
         expect(sut, toCompleteDeletionWith: anyNSError(), failedAssertMessage: failMessage)
     }
+    
+    func test_feedStoreOperations_sideEffectsRunSerially() {
+        let sut = makeSUT()
+        let cache = mockNonExpiredLocalFeed()
+        
+        var orderedOpCompletions = [XCTestExpectation]()
+        
+        let op1 = expectation(description: "Operation 1")
+        sut.insert(cache.feed, cache.timestamp) { _ in
+            orderedOpCompletions.append(op1)
+            op1.fulfill()
+        }
+        
+        let op2 = expectation(description: "Operation 2")
+        sut.deleteCachedFeed { _ in
+            orderedOpCompletions.append(op2)
+            op2.fulfill()
+        }
+        
+        let op3 = expectation(description: "Operation 3")
+        sut.retrieve { _ in
+            orderedOpCompletions.append(op3)
+            op3.fulfill()
+        }
+        
+        wait(for: [op1, op2, op3], timeout: 5.0)
+        
+        XCTAssertEqual(orderedOpCompletions, [op1, op2, op3],
+                       "Expected operations to complete in order, got \(orderedOpCompletions) instead")
+    }
 }
 
 
