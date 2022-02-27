@@ -9,6 +9,39 @@ import Foundation
 import EssentialFeed
 import XCTest
 
+protocol FeedStoreSpecs {
+    func test_retrieve_deliversEmptyOnEmptyCache()
+    func test_retrieve_hasNoSideEffectsOnEmptyCache()
+    func test_retrieve_deliversFoundValuesOnNonEmptyCache()
+    func test_retrieve_hasNoSideEffectsOnNonEmptyCache()
+    
+    func test_insert_deliversNoErrorOnEmptyCache()
+    func test_insert_deliversNoErrorOnNonEmptyCache()
+    func test_insert_overridesPreviouslyInsertedCacheValues()
+    
+    func test_delete_deliversNoErrorOnEmptyCache()
+    func test_delete_hasNoSideEffectsOnEmptyCache()
+    func test_delete_deliversNoErrorOnNonEmptyCache()
+    func test_delete_emptiesPreviouslyInsertedCache()
+    
+    func test_feedStoreOperations_sideEffectsRunSerially()
+}
+
+protocol FailableRetrieveFeedStoreSpecs: FeedStoreSpecs {
+    func test_retrieve_deliversFailureOnFailedRetrieval()
+    func test_retrieve_hasNoSideEffectsOnFailedRetrieval()
+}
+
+protocol FailableInsertFeedStoreSpecs: FeedStoreSpecs {
+    func test_insert_deliversErrorOnFailedInsertion()
+    func test_insert_hasNoSideEffectsOnFailedInsertion()
+}
+
+protocol FailableDeleteFeedStoreSpecs: FeedStoreSpecs {
+    func test_delete_deliversErrorOnFailedDeletion()
+    func test_delete_hasNoSideEffectsOnFailedDeletion()
+}
+
 class CodableFeedStoreTests: XCTestCase {
     
     override func setUp() {
@@ -51,7 +84,7 @@ class CodableFeedStoreTests: XCTestCase {
         expect(sut, toCompleteRetrievalTwiceWith: .found(feed: cache.feed, timestamp: cache.timestamp))
     }
     
-    func test_retrieve_deliversFailureOnRetrievalError() {
+    func test_retrieve_deliversFailureOnFailedRetrieval() {
         let storeURL = testSpecificStoreURL
         let sut = makeSUT(storeURL: storeURL)
         
@@ -60,7 +93,7 @@ class CodableFeedStoreTests: XCTestCase {
         expect(sut, toCompleteRetrievalWith: .failure(anyNSError()))
     }
     
-    func test_retrieve_hasNoSideEffectsOnRetrievalError() {
+    func test_retrieve_hasNoSideEffectsOnFailedRetrieval() {
         let storeURL = testSpecificStoreURL
         let sut = makeSUT(storeURL: storeURL)
         
@@ -100,7 +133,7 @@ class CodableFeedStoreTests: XCTestCase {
         XCTAssertNotEqual(oldCache.timestamp, newCache.timestamp, "Expected cache timestamps to differ")
     }
     
-    func test_insert_deliversErrorOnInsertionError() {
+    func test_insert_deliversErrorOnFailedInsertion() {
         let invalidURL = URL(string: "invalid://store-url")
         let sut = makeSUT(storeURL: invalidURL)
         
@@ -109,7 +142,7 @@ class CodableFeedStoreTests: XCTestCase {
         XCTAssertNotNil(insertionError, "Expected insertion using an invalidURL to fail with an error")
     }
     
-    func test_insert_hasNoSideEffectsOnInsertionError() {
+    func test_insert_hasNoSideEffectsOnFailedInsertion() {
         let invalidURL = URL(string: "invalid://store-url")
         let sut = makeSUT(storeURL: invalidURL)
         
@@ -152,7 +185,7 @@ class CodableFeedStoreTests: XCTestCase {
         expect(sut, toCompleteRetrievalWith: .empty)
     }
     
-    func test_delete_deliversErrorOnDeletionError() {
+    func test_delete_deliversErrorOnFailedDeletion() {
         let noDeletePermissionsURL = cachesDirectory
         let sut = makeSUT(storeURL: noDeletePermissionsURL)
         
@@ -161,7 +194,7 @@ class CodableFeedStoreTests: XCTestCase {
         XCTAssertNotNil(deletionError, "Expected deletion using an invalidURL to fail with an error")
     }
     
-    func test_delete_hasNoSideEffectsOnDeletionError() {
+    func test_delete_hasNoSideEffectsOnFailedDeletion() {
         let noDeletePermissionsURL = cachesDirectory
         let sut = makeSUT(storeURL: noDeletePermissionsURL)
         
