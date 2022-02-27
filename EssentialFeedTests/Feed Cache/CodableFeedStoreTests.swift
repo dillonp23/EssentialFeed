@@ -67,18 +67,14 @@ class CodableFeedStoreTests: XCTestCase, FailableFeedStoreSpecs {
         let invalidURL = URL(string: "invalid://store-url")
         let sut = makeSUT(storeURL: invalidURL)
         
-        let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
-        
-        XCTAssertNotNil(insertionError, "Expected insertion using an invalidURL to fail with an error")
+        assertInsertDeliversErrorOnFailedInsertion(usingStore: sut)
     }
     
     func test_insert_hasNoSideEffectsOnFailedInsertion() {
         let invalidURL = URL(string: "invalid://store-url")
         let sut = makeSUT(storeURL: invalidURL)
         
-        insert(mockNonExpiredLocalFeed(), to: sut)
-        
-        expect(sut, toCompleteRetrievalWith: .empty)
+        assertInsertHasNoSideEffectsOnFailedInsertion(usingStore: sut)
     }
     
     func test_delete_deliversNoErrorOnEmptyCache() {
@@ -133,11 +129,11 @@ extension CodableFeedStoreTests {
         return sut
     }
     
-    var testSpecificStoreURL: URL {
+    private var testSpecificStoreURL: URL {
         cachesDirectory.appendingPathComponent("\(type(of: self)).store")
     }
     
-    var cachesDirectory: URL {
+    private var cachesDirectory: URL {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
     }
 }
