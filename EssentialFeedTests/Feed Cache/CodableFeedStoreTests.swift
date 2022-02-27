@@ -72,12 +72,12 @@ class CodableFeedStoreTests: XCTestCase {
         let oldCache = mockNonExpiredLocalFeed()
         
         let firstInsertionError = insert(oldCache, to: sut)
-        XCTAssertNil(firstInsertionError, "Expected to insert cache successfully but got \(firstInsertionError!)")
+        XCTAssertNil(firstInsertionError, "Expected to insert cache successfully")
         
         let newCache = mockNonExpiredLocalFeed()
         
         let secondInsertionError = insert(newCache, to: sut)
-        XCTAssertNil(secondInsertionError, "Expected to override cache successfully but got \(secondInsertionError!)")
+        XCTAssertNil(secondInsertionError, "Expected to override cache successfully")
         
         expect(sut, toCompleteRetrievalWith: .found(feed: newCache.feed, timestamp: newCache.timestamp))
     }
@@ -87,30 +87,30 @@ class CodableFeedStoreTests: XCTestCase {
         let sut = makeSUT(storeURL: invalidURL)
         
         let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
-        XCTAssertNotNil(insertionError, "Expected insertion using an invalidURL to fail with error")
+        XCTAssertNotNil(insertionError, "Expected insertion using an invalidURL to fail with an error")
     }
     
     func test_delete_hasNoSideEffectsOnEmptyCache() {
         let sut = makeSUT()
         
-        expect(sut, toCompleteDeletionWith: nil, failedAssertMessage: "Expected empty cache deletion to succeed")
+        expect(sut, toCompleteDeletionWith: nil, assertMessage: "Expected empty cache deletion to succeed")
     }
     
     func test_delete_emptiesPreviouslyInsertedCache() {
         let sut = makeSUT()
         
         let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
-        XCTAssertNil(insertionError, "Expected to insert cache successfully but got \(insertionError!)")
+        XCTAssertNil(insertionError, "Expected to insert cache successfully")
        
-        expect(sut, toCompleteDeletionWith: nil, failedAssertMessage: "Expected non-empty cache deletion to succeed")
+        expect(sut, toCompleteDeletionWith: nil, assertMessage: "Expected non-empty cache deletion to succeed")
     }
     
     func test_delete_deliversErrorOnDeletionError() {
         let noDeletePermissionsURL = cachesDirectory
         let sut = makeSUT(storeURL: noDeletePermissionsURL)
-        let failMessage = "Expected cache deletion to fail for lack of permission at url"
+        let failMessage = "Expected deletion to fail for lack of permission at `Library/Caches` directory"
         
-        expect(sut, toCompleteDeletionWith: anyNSError(), failedAssertMessage: failMessage)
+        expect(sut, toCompleteDeletionWith: anyNSError(), assertMessage: failMessage)
     }
     
     func test_feedStoreOperations_sideEffectsRunSerially() {
@@ -139,8 +139,7 @@ class CodableFeedStoreTests: XCTestCase {
         
         wait(for: [op1, op2, op3], timeout: 5.0)
         
-        XCTAssertEqual(orderedOpCompletions, [op1, op2, op3],
-                       "Expected operations to complete in order, got \(orderedOpCompletions) instead")
+        XCTAssertEqual(orderedOpCompletions, [op1, op2, op3], "Expected operations to complete in order")
     }
 }
 
@@ -180,7 +179,7 @@ extension CodableFeedStoreTests {
                     XCTAssertEqual(expectedFeed, receivedFeed, file: file, line: line)
                     XCTAssertEqual(expectedTimestamp, receivedTimestamp, file: file, line: line)
                 default:
-                    XCTFail("Expected to retrieve \(expectedResult), got \(receivedResult) instead.", file: file, line: line)
+                    XCTFail("Expected retrieval with \(expectedResult), got \(receivedResult) instead", file: file, line: line)
             }
             exp.fulfill()
         }
@@ -198,15 +197,15 @@ extension CodableFeedStoreTests {
     
     private func expect(_ sut: FeedStore,
                         toCompleteDeletionWith expectedError: NSError?,
-                        failedAssertMessage: String,
+                        assertMessage: String,
                         file: StaticString = #filePath,
                         line: UInt = #line) {
         let deletionError = deleteCache(from: sut)
         
         if expectedError == nil {
-            XCTAssertNil(deletionError, "\(failedAssertMessage) but got \(deletionError!)", file: file, line: line)
+            XCTAssertNil(deletionError, "\(assertMessage), but got an error", file: file, line: line)
         } else {
-            XCTAssertNotNil(deletionError, failedAssertMessage, file: file, line: line)
+            XCTAssertNotNil(deletionError, assertMessage, file: file, line: line)
         }
         
         expect(sut, toCompleteRetrievalWith: .empty, file: file, line: line)
