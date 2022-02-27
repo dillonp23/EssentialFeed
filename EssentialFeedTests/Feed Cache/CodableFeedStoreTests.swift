@@ -22,33 +22,19 @@ class CodableFeedStoreTests: XCTestCase, FailableFeedStoreSpecs {
     }
     
     func test_retrieve_deliversEmptyOnEmptyCache() {
-        let sut = makeSUT()
-        
-        expect(sut, toCompleteRetrievalWith: .empty)
+        assertRetrieveDeliversEmptyOnEmptyCache(usingStore: makeSUT())
     }
     
     func test_retrieve_hasNoSideEffectsOnEmptyCache() {
-        let sut =  makeSUT()
-        
-        expect(sut, toCompleteRetrievalTwiceWith: .empty)
+        assertRetrieveHasNoSideEffectsOnEmptyCache(usingStore: makeSUT())
     }
     
     func test_retrieve_deliversFoundValuesOnNonEmptyCache() {
-        let sut =  makeSUT()
-        let cache = mockNonExpiredLocalFeed()
-        
-        insert(cache, to: sut)
-        
-        expect(sut, toCompleteRetrievalWith: .found(feed: cache.feed, timestamp: cache.timestamp))
+        assertRetrieveDeliversFoundValuesOnNonEmptyCache(usingStore: makeSUT())
     }
     
     func test_retrieve_hasNoSideEffectsOnNonEmptyCache() {
-        let sut =  makeSUT()
-        let cache = mockNonExpiredLocalFeed()
-        
-        insert(cache, to: sut)
-        
-        expect(sut, toCompleteRetrievalTwiceWith: .found(feed: cache.feed, timestamp: cache.timestamp))
+        assertRetrieveHasNoSideEffectsOnNonEmptyCache(usingStore: makeSUT())
     }
     
     func test_retrieve_deliversFailureOnFailedRetrieval() {
@@ -70,34 +56,15 @@ class CodableFeedStoreTests: XCTestCase, FailableFeedStoreSpecs {
     }
     
     func test_insert_deliversNoErrorOnEmptyCache() {
-        let sut = makeSUT()
-        
-        let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
-        
-        XCTAssertNil(insertionError, "Expected to insert cache successfully")
+        assertInsertDeliversNoErrorOnEmptyCache(usingStore: makeSUT())
     }
     
     func test_insert_deliversNoErrorOnNonEmptyCache() {
-        let sut = makeSUT()
-        insert(mockNonExpiredLocalFeed(), to: sut)
-        
-        let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
-        
-        XCTAssertNil(insertionError, "Expected to override cache successfully")
+        assertInsertDeliversNoErrorOnNonEmptyCache(usingStore: makeSUT())
     }
     
     func test_insert_overridesPreviouslyInsertedCacheValues() {
-        let sut = makeSUT()
-        
-        let oldCache = mockNonExpiredLocalFeed()
-        insert(oldCache, to: sut)
-        
-        let newCache = mockNonExpiredLocalFeed()
-        insert(newCache, to: sut)
-        
-        expect(sut, toCompleteRetrievalWith: .found(feed: newCache.feed, timestamp: newCache.timestamp))
-        XCTAssertNotEqual(oldCache.feed, newCache.feed, "Expected mock helper to create unique feeds")
-        XCTAssertNotEqual(oldCache.timestamp, newCache.timestamp, "Expected cache timestamps to differ")
+        assertInsertOverridesPreviouslyInsertedCacheValues(usingStore: makeSUT())
     }
     
     func test_insert_deliversErrorOnFailedInsertion() {
@@ -119,37 +86,19 @@ class CodableFeedStoreTests: XCTestCase, FailableFeedStoreSpecs {
     }
     
     func test_delete_deliversNoErrorOnEmptyCache() {
-        let sut = makeSUT()
-        
-        let deletionError = deleteCache(from: sut)
-        
-        XCTAssertNil(deletionError, "Expected empty cache deletion to succeed")
+        assertDeleteDeliversNoErrorOnEmptyCache(usingStore: makeSUT())
     }
     
     func test_delete_hasNoSideEffectsOnEmptyCache() {
-        let sut = makeSUT()
-        
-        deleteCache(from: sut)
-        
-        expect(sut, toCompleteRetrievalWith: .empty)
+        assertDeleteHasNoSideEffectsOnEmptyCache(usingStore: makeSUT())
     }
     
     func test_delete_deliversNoErrorOnNonEmptyCache() {
-        let sut = makeSUT()
-        insert(mockNonExpiredLocalFeed(), to: sut)
-        
-        let deletionError = deleteCache(from: sut)
-        
-        XCTAssertNil(deletionError, "Expected non-empty cache deletion to succeed")
+        assertDeleteDeliversNoErrorOnNonEmptyCache(usingStore: makeSUT())
     }
     
     func test_delete_emptiesPreviouslyInsertedCache() {
-        let sut = makeSUT()
-        insert(mockNonExpiredLocalFeed(), to: sut)
-       
-        deleteCache(from: sut)
-        
-        expect(sut, toCompleteRetrievalWith: .empty)
+        assertDeleteEmptiesPreviouslyInsertedCache(usingStore: makeSUT())
     }
     
     func test_delete_deliversErrorOnFailedDeletion() {
@@ -171,58 +120,28 @@ class CodableFeedStoreTests: XCTestCase, FailableFeedStoreSpecs {
     }
     
     func test_feedStoreOperations_sideEffectsRunSerially() {
-        let sut = makeSUT()
-        var orderedOpCompletions = [XCTestExpectation]()
-        
-        let op1 = expectation(description: "Side Effect Operation 1 - Insert")
-        sut.insert(mockNonExpiredLocalFeed().feed, Date()) { _ in
-            orderedOpCompletions.append(op1)
-            op1.fulfill()
-        }
-        
-        let op2 = expectation(description: "Side Effect Operation 2 - Delete")
-        sut.deleteCachedFeed { _ in
-            orderedOpCompletions.append(op2)
-            op2.fulfill()
-        }
-        
-        let op3 = expectation(description: "Side Effect Operation 3 - Insert")
-        sut.insert(mockNonExpiredLocalFeed().feed, Date()) { _ in
-            orderedOpCompletions.append(op3)
-            op3.fulfill()
-        }
-        
-        wait(for: [op1, op2, op3], timeout: 5.0)
-        
-        XCTAssertEqual(orderedOpCompletions, [op1, op2, op3], "Expected operations with side effects to complete in order")
+        assertFeedStoreOperationSideEffectsRunSerially(usingStore: makeSUT())
     }
 }
 
 
 extension CodableFeedStoreTests {
-    // MARK: Setup & Teardown
+    // MARK: Test Case Setup & Teardown Helper
     private func clearTestCacheArtifacts() {
         try? FileManager.default.removeItem(at: testSpecificStoreURL)
     }
     
-    // MARK: SUT & Data Mocking Helpers
     private func makeSUT(storeURL: URL? = nil, file: StaticString = #filePath, line: UInt = #line) -> FeedStore {
         let sut = CodableFeedStore(storeURL: storeURL ?? testSpecificStoreURL)
         assertNoMemoryLeaks(sut, objectName: "`CodableFeedStore`", file: file, line: line)
         return sut
     }
     
-    private var testSpecificStoreURL: URL {
+    var testSpecificStoreURL: URL {
         cachesDirectory.appendingPathComponent("\(type(of: self)).store")
     }
     
-    private var cachesDirectory: URL {
+    var cachesDirectory: URL {
         FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first!
-    }
-    
-    private func mockNonExpiredLocalFeed() -> (feed: [LocalFeedImage], timestamp: Date) {
-        let localFeed = mockUniqueFeedWithLocalRep().localRepresentation
-        let validTimestamp = Date().feedCacheTimestamp(for: .notExpired)
-        return (localFeed, validTimestamp)
     }
 }
