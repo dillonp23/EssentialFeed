@@ -10,13 +10,13 @@ import XCTest
 import EssentialFeed
 
 extension FailableDeleteFeedStoreSpecs where Self: XCTestCase {
-    func assertDeleteDeliversErrorOnFailedDeletion(usingStore sut: FeedStore) {
+    func assertDeleteDeliversErrorOnFailedDeletion(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         let deletionError = deleteCache(from: sut)
-        XCTAssertNotNil(deletionError, "Expected deletion using an invalidURL to fail with an error")
+        XCTAssertNotNil(deletionError, "Expected deletion using an invalidURL to fail with an error", file: file, line: line)
     }
     
-    func assertDeleteHasNoSideEffectsOnFailedDeletion(usingStore sut: FeedStore) {
+    func assertDeleteHasNoSideEffectsOnFailedDeletion(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         deleteCache(from: sut)
-        expect(sut, toCompleteRetrievalWith: .empty)
+        expect(sut, toCompleteRetrievalWith: .empty, file: file, line: line)
     }
 }

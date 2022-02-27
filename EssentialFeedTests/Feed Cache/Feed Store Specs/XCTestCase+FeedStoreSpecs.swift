@@ -11,72 +11,72 @@ import EssentialFeed
 
 extension FeedStoreSpecs where Self: XCTestCase {
     
-    func assertRetrieveDeliversEmptyOnEmptyCache(usingStore sut: FeedStore) {
-        expect(sut, toCompleteRetrievalWith: .empty)
+    func assertRetrieveDeliversEmptyOnEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
+        expect(sut, toCompleteRetrievalWith: .empty, file: file, line: line)
     }
     
-    func assertRetrieveHasNoSideEffectsOnEmptyCache(usingStore sut: FeedStore) {
-        expect(sut, toCompleteRetrievalTwiceWith: .empty)
+    func assertRetrieveHasNoSideEffectsOnEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
+        expect(sut, toCompleteRetrievalTwiceWith: .empty, file: file, line: line)
     }
     
-    func assertRetrieveDeliversFoundValuesOnNonEmptyCache(usingStore sut: FeedStore) {
+    func assertRetrieveDeliversFoundValuesOnNonEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         let cache = mockNonExpiredLocalFeed()
         insert(cache, to: sut)
-        expect(sut, toCompleteRetrievalWith: .found(feed: cache.feed, timestamp: cache.timestamp))
+        expect(sut, toCompleteRetrievalWith: .found(feed: cache.feed, timestamp: cache.timestamp), file: file, line: line)
     }
     
-    func assertRetrieveHasNoSideEffectsOnNonEmptyCache(usingStore sut: FeedStore) {
+    func assertRetrieveHasNoSideEffectsOnNonEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         let cache = mockNonExpiredLocalFeed()
         insert(cache, to: sut)
-        expect(sut, toCompleteRetrievalTwiceWith: .found(feed: cache.feed, timestamp: cache.timestamp))
+        expect(sut, toCompleteRetrievalTwiceWith: .found(feed: cache.feed, timestamp: cache.timestamp), file: file, line: line)
     }
     
-    func assertInsertDeliversNoErrorOnEmptyCache(usingStore sut: FeedStore) {
+    func assertInsertDeliversNoErrorOnEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
-        XCTAssertNil(insertionError, "Expected to insert cache successfully")
+        XCTAssertNil(insertionError, "Expected to insert cache successfully", file: file, line: line)
     }
     
-    func assertInsertDeliversNoErrorOnNonEmptyCache(usingStore sut: FeedStore) {
+    func assertInsertDeliversNoErrorOnNonEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         insert(mockNonExpiredLocalFeed(), to: sut)
         let insertionError = insert(mockNonExpiredLocalFeed(), to: sut)
-        XCTAssertNil(insertionError, "Expected to override cache successfully")
+        XCTAssertNil(insertionError, "Expected to override cache successfully", file: file, line: line)
     }
     
-    func assertInsertOverridesPreviouslyInsertedCacheValues(usingStore sut: FeedStore) {
+    func assertInsertOverridesPreviouslyInsertedCacheValues(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         let oldCache = mockNonExpiredLocalFeed()
         insert(oldCache, to: sut)
         
         let newCache = mockNonExpiredLocalFeed()
         insert(newCache, to: sut)
         
-        expect(sut, toCompleteRetrievalWith: .found(feed: newCache.feed, timestamp: newCache.timestamp))
-        XCTAssertNotEqual(oldCache.feed, newCache.feed, "Expected mock helper to create unique feeds")
-        XCTAssertNotEqual(oldCache.timestamp, newCache.timestamp, "Expected cache timestamps to differ")
+        expect(sut, toCompleteRetrievalWith: .found(feed: newCache.feed, timestamp: newCache.timestamp), file: file, line: line)
+        XCTAssertNotEqual(oldCache.feed, newCache.feed, "Expected mock helper to create unique feeds", file: file, line: line)
+        XCTAssertNotEqual(oldCache.timestamp, newCache.timestamp, "Expected cache timestamps to differ", file: file, line: line)
     }
     
-    func assertDeleteDeliversNoErrorOnEmptyCache(usingStore sut: FeedStore) {
+    func assertDeleteDeliversNoErrorOnEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         let deletionError = deleteCache(from: sut)
-        XCTAssertNil(deletionError, "Expected empty cache deletion to succeed")
+        XCTAssertNil(deletionError, "Expected empty cache deletion to succeed", file: file, line: line)
     }
     
-    func assertDeleteHasNoSideEffectsOnEmptyCache(usingStore sut: FeedStore) {
+    func assertDeleteHasNoSideEffectsOnEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         deleteCache(from: sut)
-        expect(sut, toCompleteRetrievalWith: .empty)
+        expect(sut, toCompleteRetrievalWith: .empty, file: file, line: line)
     }
     
-    func assertDeleteDeliversNoErrorOnNonEmptyCache(usingStore sut: FeedStore) {
+    func assertDeleteDeliversNoErrorOnNonEmptyCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         insert(mockNonExpiredLocalFeed(), to: sut)
         let deletionError = deleteCache(from: sut)
-        XCTAssertNil(deletionError, "Expected non-empty cache deletion to succeed")
+        XCTAssertNil(deletionError, "Expected non-empty cache deletion to succeed", file: file, line: line)
     }
     
-    func assertDeleteEmptiesPreviouslyInsertedCache(usingStore sut: FeedStore) {
+    func assertDeleteEmptiesPreviouslyInsertedCache(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         insert(mockNonExpiredLocalFeed(), to: sut)
         deleteCache(from: sut)
-        expect(sut, toCompleteRetrievalWith: .empty)
+        expect(sut, toCompleteRetrievalWith: .empty, file: file, line: line)
     }
     
-    func assertFeedStoreOperationSideEffectsRunSerially(usingStore sut: FeedStore) {
+    func assertFeedStoreOperationSideEffectsRunSerially(usingStore sut: FeedStore, file: StaticString = #filePath, line: UInt = #line) {
         var orderedOpCompletions = [XCTestExpectation]()
         
         let op1 = expectation(description: "Side Effect Operation 1 - Insert")
@@ -99,7 +99,7 @@ extension FeedStoreSpecs where Self: XCTestCase {
         
         wait(for: [op1, op2, op3], timeout: 5.0)
         
-        XCTAssertEqual(orderedOpCompletions, [op1, op2, op3], "Expected operations with side effects to complete in order")
+        XCTAssertEqual(orderedOpCompletions, [op1, op2, op3], "Expected operations with side effects to complete in order", file: file, line: line)
     }
     
 }
