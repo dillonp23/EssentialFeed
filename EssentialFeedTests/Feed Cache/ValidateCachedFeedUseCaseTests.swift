@@ -122,6 +122,28 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
         })
     }
     
+    func test_validateCache_deliversValidatedResultAndDoesNotRequestCacheDeletionOnEmptyCache() {
+        let (sut, store) = makeSUT()
+        
+        expect(sut, toCompleteValidationWith: .validated, forAction: {
+            store.completeRetrievalSuccessfully(with: [], timestamp: Date())
+            XCTAssertEqual(store.receivedMessages, [.retrieve])
+        })
+    }
+    
+    func test_validateCache_deliversValidatedResultAndDoesNotRequestCacheDeletionOnNonExpiredCache() {
+        let fixedCurrentDate = Date()
+        let nonExpiredTimestamp = fixedCurrentDate.feedCacheTimestamp(for: .notExpired)
+        let (sut, store) = makeSUT(currentDate: { fixedCurrentDate })
+        
+        let anyNonEmptyFeed = mockUniqueFeedWithLocalRep().localRepresentation
+        
+        expect(sut, toCompleteValidationWith: .validated, forAction: {
+            store.completeRetrievalSuccessfully(with: anyNonEmptyFeed, timestamp: nonExpiredTimestamp)
+            XCTAssertEqual(store.receivedMessages, [.retrieve])
+        })
+    }
+    
     func test_validateCache_doesNotDeleteInvalidCacheAfterSUTHasBeenDeallocated() {
         let store = FeedStoreSpy()
         var sut: LocalFeedLoader? = LocalFeedLoader(store: store, currentDate: Date.init)
