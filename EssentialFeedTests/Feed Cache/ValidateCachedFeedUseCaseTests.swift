@@ -83,25 +83,10 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
         let anyNonEmptyFeed = mockUniqueFeedWithLocalRep().localRepresentation
         let cacheDeletionError = anyNSError()
         
-        let exp = expectation(description: "Wait for `validateCache` completion")
-        
-        var deletedResultError: Error?
-        sut.validateCache() { result in
-            switch result {
-                case let .deleted(receivedError):
-                    deletedResultError = receivedError
-                default:
-                    XCTFail("Expected `.deleted` validation result with error, got `.\(result)` instead")
-            }
-            exp.fulfill()
-        }
-        
-        store.completeRetrievalSuccessfully(with: anyNonEmptyFeed, timestamp: expiredTimestamp)
-        store.completeDeletion(error: cacheDeletionError)
-        
-        wait(for: [exp], timeout: 1.0)
-        
-        XCTAssertEqual(cacheDeletionError, deletedResultError as NSError?)
+        expect(sut, toCompleteValidationWith: .deleted(cacheDeletionError), forAction: {
+            store.completeRetrievalSuccessfully(with: anyNonEmptyFeed, timestamp: expiredTimestamp)
+            store.completeDeletion(error: cacheDeletionError)
+        })
     }
     
     func test_validateCache_doesNotDeleteInvalidCacheAfterSUTHasBeenDeallocated() {
@@ -126,5 +111,30 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
         assertNoMemoryLeaks(sut, objectName: "LocalFeedLoader_Cache", file: file, line: line)
         
         return (sut, store)
+    }
+    
+    private func expect(_ sut: LocalFeedLoader,
+                        toCompleteValidationWith expectedResult: LocalFeedLoader.ValidationResult,
+                        forAction action: () -> Void,
+                        file: StaticString = #filePath,
+                        line: UInt = #line) {
+        
+        let exp = expectation(description: "Wait for `validateCache` completion")
+
+        sut.validateCache { receivedResult in
+            switch (expectedResult, receivedResult) {
+                case (.validated, .validated):
+                    break
+                case let (.deleted(expectedError as NSError?), .deleted(receivedError as NSError?)):
+                    XCTAssertEqual(expectedError, receivedError, file: file, line: line)
+                default:
+                    XCTFail("Expected result `.\(expectedResult)`, got `.\(receivedResult)` instead", file: file, line: line)
+            }
+            exp.fulfill()
+        }
+        
+        action()
+        
+        wait(for: [exp], timeout: 1.0)
     }
 }
