@@ -17,10 +17,10 @@ enum FeedCachePolicy {
     private static let maxCacheAgeInDays = 7
     
     static func validateExpirationStatus(for timestamp: Date, against currentDate: Date) -> Status {
-        guard let expiration = calendar.date(byAdding: .day, value: -maxCacheAgeInDays, to: currentDate) else {
-            preconditionFailure("`CacheValidationPolicy` error: Unable to get expiration timestamp from \(currentDate)")
+        if let expiration = calendar.date(byAdding: .day, value: -maxCacheAgeInDays, to: currentDate), timestamp <= expiration {
+            return .expired
         }
         
-        return timestamp <= expiration ? .expired : .notExpired
+        return .notExpired
     }
 }

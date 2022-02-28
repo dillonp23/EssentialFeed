@@ -16,18 +16,29 @@ public final class LocalFeedLoader: FeedLoader {
         self.currentDate = currentDate
     }
     
-    public func validateCache() {
+    public enum ValidationResult {
+        case validated
+        case deleted(Error?)
+    }
+    
+    public func validateCache(completion: @escaping (ValidationResult) -> Void = { _ in }) {
         store.retrieve { [weak self] result in
             guard let self = self else { return }
             
             switch result {
                 case .failure:
-                    self.store.deleteCachedFeed { _ in }
+                    self.deleteInvalidCache(completion: completion)
                 case let .found(_, timestamp) where self.statusFor(timestamp) == .expired:
-                    self.store.deleteCachedFeed { _ in }
-                case .found, .empty:
-                    break
+                    self.deleteInvalidCache(completion: completion)
+                case .empty, .found:
+                    completion(.validated)
             }
+        }
+    }
+    
+    private func deleteInvalidCache(completion: @escaping (ValidationResult) -> Void) {
+        store.deleteCachedFeed { error in
+            completion(.deleted(error))
         }
     }
     
