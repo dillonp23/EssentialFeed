@@ -8,7 +8,6 @@
 import CoreData
 
 public final class CoreDataFeedStore: FeedStore {
-    
     private let container: NSPersistentContainer
     private let moc: NSManagedObjectContext
     
@@ -21,11 +20,7 @@ public final class CoreDataFeedStore: FeedStore {
         let context = self.moc
         context.perform {
             do {
-                let managedCache = ManagedCache(context: context)
-                managedCache.timestamp = timestamp
-                managedCache.feed = ManagedCache.mapOrderedSet(from: feed, in: context)
-                
-                try context.save()
+                try ManagedCache.create(in: context, using: (feed, timestamp))
                 completion(nil)
             } catch {
                 completion(error)
@@ -41,23 +36,19 @@ public final class CoreDataFeedStore: FeedStore {
         let context = self.moc
         context.perform {
             do {
-                let request = NSFetchRequest<ManagedCache>(entityName: ManagedCache.entityName)
-                request.returnsObjectsAsFaults = false
-                
-                guard let managedCache = try context.fetch(request).first else {
+                guard let cache = try ManagedCache.find(in: context) else {
                     return completion(.empty)
                 }
-                
-                let localCache = managedCache.mappedToLocal()
-                completion(.found(feed: localCache.feed, timestamp: localCache.timestamp))
+                completion(.found(feed: cache.localFeed, timestamp: cache.timestamp))
             } catch {
-                completion(.failure(error))
+                completion(.empty)
             }
         }
     }
 }
 
-// MARK: - CoreDataFeedStore Model Representations
+
+// MARK: - Managed Cache & Helpers
 @objc(ManagedCache)
 private class ManagedCache: NSManagedObject {
     @NSManaged var timestamp: Date
@@ -65,22 +56,33 @@ private class ManagedCache: NSManagedObject {
 }
 
 private extension ManagedCache {
-    static var entityName: String {
-        return self.entity().name!
+    static func find(in context: NSManagedObjectContext) throws -> ManagedCache? {
+        let request = NSFetchRequest<ManagedCache>(entityName: self.entity().name!)
+        request.returnsObjectsAsFaults = false
+        
+        return try context.fetch(request).first
     }
     
-    func mappedToLocal() -> (feed: [LocalFeedImage], timestamp: Date) {
-        let managedFeed = self.feed.compactMap {
-            $0 as? ManagedFeedImage
-        }
-        let localFeed = managedFeed.map {
-            LocalFeedImage(id: $0.id, description: $0.imageDescription, location: $0.location, url: $0.url)
-        }
-        return (localFeed, self.timestamp)
+    static func create(in context: NSManagedObjectContext,
+                       using localCache: (feed: [LocalFeedImage], time: Date)) throws {
+        let cache = ManagedCache(context: context)
+        cache.timestamp = localCache.time
+        cache.feed = ManagedCache.mapOrderedSet(from: localCache.feed, in: context)
+        try context.save()
+    }
+}
+
+private extension ManagedCache {
+    var localFeed: [LocalFeedImage] {
+        return managedFeed.map { $0.localRepresentation }
+    }
+    
+    private var managedFeed: [ManagedFeedImage] {
+        return self.feed.compactMap { $0 as? ManagedFeedImage }
     }
     
     static func mapOrderedSet(from localFeed: [LocalFeedImage],
-                                 in context: NSManagedObjectContext) -> NSOrderedSet {
+                              in context: NSManagedObjectContext) -> NSOrderedSet {
         return NSOrderedSet(array: localFeed.map {
             let managedImage = ManagedFeedImage(context: context)
             managedImage.id = $0.id
@@ -92,6 +94,8 @@ private extension ManagedCache {
     }
 }
 
+
+// MARK: - Managed Feed Image & Helpers
 @objc(ManagedFeedImage)
 private class ManagedFeedImage: NSManagedObject {
     @NSManaged var id: UUID
@@ -101,7 +105,17 @@ private class ManagedFeedImage: NSManagedObject {
     @NSManaged var cache: ManagedCache
 }
 
-// MARK: - Core Data Stack Setup Helpers
+private extension ManagedFeedImage {
+    var localRepresentation: LocalFeedImage {
+        return LocalFeedImage(id: self.id,
+                              description: self.imageDescription,
+                              location: self.location,
+                              url: self.url)
+    }
+}
+
+
+// MARK: - Core Data Stack Setup & Helpers
 private extension NSPersistentContainer {
     enum LoadingError: Swift.Error {
         case modelNotFound
