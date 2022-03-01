@@ -9,25 +9,6 @@ import Foundation
 import XCTest
 import EssentialFeed
 
-final class CoreDataFeedStore: FeedStore {
-    
-    public init() {
-        
-    }
-    
-    func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
-        
-    }
-    
-    func deleteCachedFeed(completion: @escaping OperationCompletion) {
-        
-    }
-    
-    func retrieve(completion: @escaping RetrievalCompletion) {
-        completion(.empty)
-    }
-}
-
 class CoreDataFeedStoreTests: XCTestCase, FeedStoreSpecs {
     
     func test_retrieve_deliversEmptyOnEmptyCache() {
