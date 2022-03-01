@@ -18,7 +18,19 @@ public final class CoreDataFeedStore: FeedStore {
     }
     
     public func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
-        
+        let context = self.moc
+        context.perform {
+            do {
+                let managedCache = ManagedCache(context: context)
+                managedCache.timestamp = timestamp
+                managedCache.feed = ManagedCache.mapOrderedSet(from: feed, in: context)
+                
+                try context.save()
+                completion(nil)
+            } catch {
+                completion(error)
+            }
+        }
     }
     
     public func deleteCachedFeed(completion: @escaping OperationCompletion) {
@@ -26,7 +38,22 @@ public final class CoreDataFeedStore: FeedStore {
     }
     
     public func retrieve(completion: @escaping RetrievalCompletion) {
-        completion(.empty)
+        let context = self.moc
+        context.perform {
+            do {
+                let request = NSFetchRequest<ManagedCache>(entityName: ManagedCache.entityName)
+                request.returnsObjectsAsFaults = false
+                
+                guard let managedCache = try context.fetch(request).first else {
+                    return completion(.empty)
+                }
+                
+                let localCache = managedCache.mappedToLocal()
+                completion(.found(feed: localCache.feed, timestamp: localCache.timestamp))
+            } catch {
+                completion(.failure(error))
+            }
+        }
     }
 }
 
