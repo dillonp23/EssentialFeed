@@ -31,11 +31,41 @@ public final class CoreDataFeedStore: FeedStore {
 }
 
 // MARK: - CoreDataFeedStore Model Representations
+@objc(ManagedCache)
 private class ManagedCache: NSManagedObject {
     @NSManaged var timestamp: Date
     @NSManaged var feed: NSOrderedSet
 }
 
+private extension ManagedCache {
+    static var entityName: String {
+        return self.entity().name!
+    }
+    
+    func mappedToLocal() -> (feed: [LocalFeedImage], timestamp: Date) {
+        let managedFeed = self.feed.compactMap {
+            $0 as? ManagedFeedImage
+        }
+        let localFeed = managedFeed.map {
+            LocalFeedImage(id: $0.id, description: $0.imageDescription, location: $0.location, url: $0.url)
+        }
+        return (localFeed, self.timestamp)
+    }
+    
+    static func mapOrderedSet(from localFeed: [LocalFeedImage],
+                                 in context: NSManagedObjectContext) -> NSOrderedSet {
+        return NSOrderedSet(array: localFeed.map {
+            let managedImage = ManagedFeedImage(context: context)
+            managedImage.id = $0.id
+            managedImage.imageDescription = $0.description
+            managedImage.location = $0.location
+            managedImage.url = $0.url
+            return managedImage
+        })
+    }
+}
+
+@objc(ManagedFeedImage)
 private class ManagedFeedImage: NSManagedObject {
     @NSManaged var id: UUID
     @NSManaged var imageDescription: String?
