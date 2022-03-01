@@ -9,7 +9,12 @@ import Foundation
 import XCTest
 import EssentialFeed
 
-class CoreDataFeedStore: FeedStore {
+final class CoreDataFeedStore: FeedStore {
+    
+    public init() {
+        
+    }
+    
     func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
         
     }
@@ -81,7 +86,9 @@ class CoreDataFeedStoreTests: XCTestCase, FeedStoreSpecs {
 
 
 extension CoreDataFeedStoreTests {
-    private func makeSUT() -> FeedStore {
-        return CoreDataFeedStore()
+    private func makeSUT(file: StaticString = #filePath, line: UInt = #line) -> FeedStore {
+        let sut = CoreDataFeedStore()
+        assertNoMemoryLeaks(sut, objectName: "`CoreDataFeedStore`", file: file, line: line)
+        return sut
     }
 }
