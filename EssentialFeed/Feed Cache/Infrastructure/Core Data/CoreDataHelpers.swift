@@ -7,20 +7,44 @@
 
 import CoreData
 
+public enum CoreDataStore {
+    public enum StorageType {
+        case persistent(url: URL)
+        case inMemory
+        case custom(typeName: String)
+    }
+
+    static func createContainer(ofType storeType: StorageType, modelName: String, in bundle: Bundle) throws -> NSPersistentContainer  {
+
+        let storeDescription = NSPersistentStoreDescription()
+        switch storeType {
+            case let .persistent(url):
+                storeDescription.url = url
+            case .inMemory:
+                storeDescription.url = URL(fileURLWithPath: "/dev/null")
+            case let .custom(typeName):
+                storeDescription.type = typeName
+        }
+
+        return try NSPersistentContainer.load(modelName: modelName, storeDescription: storeDescription, in: bundle)
+    }
+}
+
 extension NSPersistentContainer {
     private enum LoadingError: Swift.Error {
         case modelNotFound
         case failedToLoadPersistentStores(Swift.Error)
     }
     
-    static func load(modelName name: String, url: URL, in bundle: Bundle) throws -> NSPersistentContainer {
+    static func load(modelName name: String,
+                     storeDescription: NSPersistentStoreDescription,
+                     in bundle: Bundle) throws -> NSPersistentContainer {
         guard let model = NSManagedObjectModel.with(name: name, in: bundle) else {
             throw LoadingError.modelNotFound
         }
         
-        let storeDescriptor = NSPersistentStoreDescription(url: url)
         let container = NSPersistentContainer(name: name, managedObjectModel: model)
-        container.persistentStoreDescriptions = [storeDescriptor]
+        container.persistentStoreDescriptions = [storeDescription]
         
         var loadingError: Swift.Error?
         container.loadPersistentStores { _, error in

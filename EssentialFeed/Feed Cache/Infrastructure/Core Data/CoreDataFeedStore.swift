@@ -11,9 +11,9 @@ public final class CoreDataFeedStore: FeedStore {
     private let container: NSPersistentContainer
     private let moc: NSManagedObjectContext
     
-    public init(storeURL: URL, bundle: Bundle = .main) throws {
-        container = try NSPersistentContainer.load(modelName: "FeedStore", url: storeURL, in: bundle)
-        moc = container.newBackgroundContext()
+    public init(storeType: CoreDataStore.StorageType, bundle: Bundle = .main) throws {
+        self.container = try CoreDataStore.createContainer(ofType: storeType, modelName: "FeedStore", in: bundle)
+        self.moc = container.newBackgroundContext()
     }
     
     public func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
