@@ -41,7 +41,7 @@ public final class CoreDataFeedStore: FeedStore {
                 }
                 completion(.found(feed: cache.localFeed, timestamp: cache.timestamp))
             } catch {
-                completion(.empty)
+                completion(.failure(error))
             }
         }
     }
