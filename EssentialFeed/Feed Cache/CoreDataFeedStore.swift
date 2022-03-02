@@ -29,7 +29,15 @@ public final class CoreDataFeedStore: FeedStore {
     }
     
     public func deleteCachedFeed(completion: @escaping OperationCompletion) {
-        
+        let context = self.moc
+        context.perform {
+            do {
+                try ManagedCache.delete(in: context)
+                completion(nil)
+            } catch {
+                completion(error)
+            }
+        }
     }
     
     public func retrieve(completion: @escaping RetrievalCompletion) {
@@ -73,11 +81,16 @@ private extension ManagedCache {
     /// before creating and saving a new unique `ManagedCache` instance.
     static func createNewUniqueInstance(in context: NSManagedObjectContext,
                        using localCache: (feed: [LocalFeedImage], time: Date)) throws {
-        try ManagedCache.find(in: context).flatMap { context.delete($0) }
+        try ManagedCache.delete(in: context)
         
         let cache = ManagedCache(context: context)
         cache.timestamp = localCache.time
         cache.feed = ManagedCache.mapOrderedSet(from: localCache.feed, in: context)
+        try context.save()
+    }
+    
+    static func delete(in context: NSManagedObjectContext) throws {
+        try ManagedCache.find(in: context).flatMap { context.delete($0) }
         try context.save()
     }
 }
