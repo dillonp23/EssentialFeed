@@ -20,7 +20,7 @@ public final class CoreDataFeedStore: FeedStore {
         let context = self.moc
         context.perform {
             do {
-                try ManagedCache.create(in: context, using: (feed, timestamp))
+                try ManagedCache.createNewUniqueInstance(in: context, using: (feed, timestamp))
                 completion(nil)
             } catch {
                 completion(error)
@@ -56,6 +56,12 @@ private class ManagedCache: NSManagedObject {
 }
 
 private extension ManagedCache {
+    /// Checks if there is a previously saved cache using the `NSFetchRequest` for
+    /// the `ManagedCache` entity name, returning the cache if there is one, nil if
+    /// the cache is empty, or throwing an error if the request fails.
+    ///
+    /// Note: an error is thrown only if the `NSFetchRequest` fails, such as if there
+    /// is underlying data corruption or an issue with the store.
     static func find(in context: NSManagedObjectContext) throws -> ManagedCache? {
         let request = NSFetchRequest<ManagedCache>(entityName: self.entity().name!)
         request.returnsObjectsAsFaults = false
@@ -63,8 +69,12 @@ private extension ManagedCache {
         return try context.fetch(request).first
     }
     
-    static func create(in context: NSManagedObjectContext,
+    /// Will check whether there is a previously saved cache, and if so, first delete it
+    /// before creating and saving a new unique `ManagedCache` instance.
+    static func createNewUniqueInstance(in context: NSManagedObjectContext,
                        using localCache: (feed: [LocalFeedImage], time: Date)) throws {
+        try ManagedCache.find(in: context).flatMap { context.delete($0) }
+        
         let cache = ManagedCache(context: context)
         cache.timestamp = localCache.time
         cache.feed = ManagedCache.mapOrderedSet(from: localCache.feed, in: context)
