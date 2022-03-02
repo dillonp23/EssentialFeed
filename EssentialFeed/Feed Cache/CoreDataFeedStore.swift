@@ -17,10 +17,9 @@ public final class CoreDataFeedStore: FeedStore {
     }
     
     public func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
-        let context = self.moc
-        context.perform {
+        perform { context in
             do {
-                try ManagedCache.createNewUniqueInstance(in: context, using: (feed, timestamp))
+                try ManagedCache.createUniqueInstanceAndSave(in: context, using: (feed, timestamp))
                 completion(nil)
             } catch {
                 completion(error)
@@ -29,10 +28,9 @@ public final class CoreDataFeedStore: FeedStore {
     }
     
     public func deleteCachedFeed(completion: @escaping OperationCompletion) {
-        let context = self.moc
-        context.perform {
+        perform { context in
             do {
-                try ManagedCache.delete(in: context)
+                try ManagedCache.deleteAndSave(in: context)
                 completion(nil)
             } catch {
                 completion(error)
@@ -41,8 +39,7 @@ public final class CoreDataFeedStore: FeedStore {
     }
     
     public func retrieve(completion: @escaping RetrievalCompletion) {
-        let context = self.moc
-        context.perform {
+        perform { context in
             do {
                 guard let cache = try ManagedCache.find(in: context) else {
                     return completion(.empty)
@@ -51,6 +48,13 @@ public final class CoreDataFeedStore: FeedStore {
             } catch {
                 completion(.failure(error))
             }
+        }
+    }
+    
+    private func perform(_ action: @escaping (NSManagedObjectContext) -> Void) {
+        let context = self.moc
+        context.perform {
+            action(context)
         }
     }
 }
@@ -79,9 +83,9 @@ private extension ManagedCache {
     
     /// Will check whether there is a previously saved cache, and if so, first delete it
     /// before creating and saving a new unique `ManagedCache` instance.
-    static func createNewUniqueInstance(in context: NSManagedObjectContext,
-                       using localCache: (feed: [LocalFeedImage], time: Date)) throws {
-        try ManagedCache.delete(in: context)
+    static func createUniqueInstanceAndSave(in context: NSManagedObjectContext,
+                                            using localCache: (feed: [LocalFeedImage], time: Date)) throws {
+        try ManagedCache.deleteAndSave(in: context)
         
         let cache = ManagedCache(context: context)
         cache.timestamp = localCache.time
@@ -89,7 +93,7 @@ private extension ManagedCache {
         try context.save()
     }
     
-    static func delete(in context: NSManagedObjectContext) throws {
+    static func deleteAndSave(in context: NSManagedObjectContext) throws {
         try ManagedCache.find(in: context).flatMap { context.delete($0) }
         try context.save()
     }
