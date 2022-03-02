@@ -58,22 +58,3 @@ public final class CoreDataFeedStore: FeedStore {
         }
     }
 }
-
-// MARK: - Managed Feed Image & Helpers
-@objc(ManagedFeedImage)
-internal class ManagedFeedImage: NSManagedObject {
-    @NSManaged var id: UUID
-    @NSManaged var imageDescription: String?
-    @NSManaged var location: String?
-    @NSManaged var url: URL
-    @NSManaged var cache: ManagedCache
-}
-
-internal extension ManagedFeedImage {
-    var localRepresentation: LocalFeedImage {
-        return LocalFeedImage(id: self.id,
-                              description: self.imageDescription,
-                              location: self.location,
-                              url: self.url)
-    }
-}
