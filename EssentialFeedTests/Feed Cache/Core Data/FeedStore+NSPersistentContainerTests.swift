@@ -31,3 +31,11 @@ class NSPersistentContainerTests: XCTestCase {
         }
     }
 }
+
+extension NSPersistentContainerTests {
+    private final class FailableContainer: NSPersistentContainer {
+        override func loadPersistentStores(completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {
+            block(NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null")), anyNSError())
+        }
+    }
+}
