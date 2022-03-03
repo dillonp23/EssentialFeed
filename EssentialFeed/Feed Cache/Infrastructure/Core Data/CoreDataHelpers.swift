@@ -37,8 +37,8 @@ public enum CoreDataStore {
     }
 }
 
-extension NSPersistentContainer {
-    private enum LoadingError: Swift.Error {
+public extension NSPersistentContainer {
+    enum LoadingError: Swift.Error {
         case modelNotFound
         case failedToLoadPersistentStores(Swift.Error)
     }
