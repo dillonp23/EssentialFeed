@@ -13,15 +13,13 @@ class NSPersistentContainerTests: XCTestCase {
     private typealias LoadError = NSPersistentContainer.LoadingError
     
     func test_loadContainerForModel_deliversModelNotFoundErrorOnInvalidModelName() {
-        let modelName = "IncorrectModelName"
-        let emptyStoreDescription = NSPersistentStoreDescription()
-        let bundle = Bundle(for: CoreDataFeedStore.self)
+        let components = mockComponentsFor(modelType: .invalid)
         
         func containerLoad() throws -> NSPersistentContainer {
             return try NSPersistentContainer
-                .loadContainerForModel(named: modelName,
-                                       storeDescription: emptyStoreDescription,
-                                       in: bundle)
+                .loadContainerForModel(named: components.name,
+                                       storeDescription: components.storeDescription,
+                                       in: components.bundle)
         }
         
         XCTAssertThrowsError(try containerLoad()) { error in
@@ -32,12 +30,11 @@ class NSPersistentContainerTests: XCTestCase {
     }
     
     func test_loadStoresIn_deliversFailedToLoadPersistentStoresErrorOnLoadStoresFailure() {
-        let name = "FeedStore"
-        let model = NSManagedObjectModel.with(name: name, in: Bundle(for: CoreDataFeedStore.self))!
+        let components = mockComponentsFor(modelType: .valid)
+        let model = NSManagedObjectModel.with(name: components.name, in: components.bundle)!
         
-        let container = FailableContainer(name: name, managedObjectModel: model)
-        let storeDescription = NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
-        container.persistentStoreDescriptions = [storeDescription]
+        let container = FailableContainer(name: components.name, managedObjectModel: model)
+        container.persistentStoreDescriptions = [components.storeDescription]
         
         XCTAssertThrowsError(try NSPersistentContainer.loadStoresIn(container: container)) { error in
             guard let thrownError = error as? LoadError, case let .failedToLoadPersistentStores(loadingError) = thrownError else {
@@ -49,6 +46,27 @@ class NSPersistentContainerTests: XCTestCase {
     }
 }
 
+
+// MARK: Helpers
+extension NSPersistentContainerTests {
+    private typealias SUTComponents = (name: String, storeDescription: NSPersistentStoreDescription, bundle: Bundle)
+    
+    private enum ManagedModelType: String {
+        case invalid = "InvalidModelName"
+        case valid = "FeedStore"
+    }
+    
+    private func mockComponentsFor(modelType: ManagedModelType) -> SUTComponents {
+        let modelName = modelType.rawValue
+        let emptyStoreDescription = NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+        let bundle = Bundle(for: CoreDataFeedStore.self)
+        
+        return (modelName, emptyStoreDescription, bundle)
+    }
+}
+
+
+// MARK: Test-Specific `FailableContainer` Class
 extension NSPersistentContainerTests {
     private final class FailableContainer: NSPersistentContainer {
         override func loadPersistentStores(completionHandler block: @escaping (NSPersistentStoreDescription, Error?) -> Void) {
