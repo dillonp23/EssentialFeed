@@ -17,7 +17,7 @@ public enum CoreDataStore {
     public enum StorageType {
         case persistent(url: URL)
         case inMemory
-        case custom(typeName: String)
+        case custom(store: CustomCoreDataStore.Type)
     }
 
     static func createContainer(ofType storeType: StorageType, modelName: String, in bundle: Bundle) throws -> NSPersistentContainer  {
@@ -28,8 +28,9 @@ public enum CoreDataStore {
                 storeDescription.url = url
             case .inMemory:
                 storeDescription.url = URL(fileURLWithPath: "/dev/null")
-            case let .custom(typeName):
-                storeDescription.type = typeName
+            case let .custom(store):
+                store.registerType()
+                storeDescription.type = store.storeTypeKey
         }
 
         return try NSPersistentContainer.load(modelName: modelName, storeDescription: storeDescription, in: bundle)
