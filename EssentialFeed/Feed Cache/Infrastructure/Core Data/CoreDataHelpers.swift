@@ -20,7 +20,7 @@ public enum CoreDataStack {
         case custom(store: CustomCoreDataStore.Type)
     }
 
-    static func createContainer(ofType storeType: StorageType, modelName: String, in bundle: Bundle) throws -> NSPersistentContainer  {
+    public static func createContainer(ofType storeType: StorageType, modelName: String, in bundle: Bundle) throws -> NSPersistentContainer  {
 
         let storeDescription = NSPersistentStoreDescription()
         switch storeType {
