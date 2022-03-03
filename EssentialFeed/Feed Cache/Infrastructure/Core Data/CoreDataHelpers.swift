@@ -13,7 +13,7 @@ public protocol CustomCoreDataStore {
     static var storeUUIDKey: String { get }
 }
 
-public enum CoreDataStore {
+public enum CoreDataStack {
     public enum StorageType {
         case persistent(url: URL)
         case inMemory

@@ -11,8 +11,8 @@ public final class CoreDataFeedStore: FeedStore {
     private let container: NSPersistentContainer
     private let moc: NSManagedObjectContext
     
-    public init(storeType: CoreDataStore.StorageType, bundle: Bundle = .main) throws {
-        self.container = try CoreDataStore.createContainer(ofType: storeType, modelName: "FeedStore", in: bundle)
+    public init(storeType: CoreDataStack.StorageType, bundle: Bundle = .main) throws {
+        self.container = try CoreDataStack.createContainer(ofType: storeType, modelName: "FeedStore", in: bundle)
         self.moc = container.newBackgroundContext()
     }
     
