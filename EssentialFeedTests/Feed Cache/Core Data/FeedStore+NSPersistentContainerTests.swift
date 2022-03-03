@@ -1,5 +1,5 @@
 //
-//  FeedStore+CoreDataStackTests.swift
+//  FeedStore+NSPersistentContainerTests.swift
 //  EssentialFeedTests
 //
 //  Created by Dillon on 3/2/22.
@@ -9,8 +9,7 @@ import XCTest
 import EssentialFeed
 import CoreData
 
-// MARK: NSPersistentContainer `Load` Tests
-extension CoreDataFeedStoreTests {
+class NSPersistentContainerTests: XCTestCase {
     private typealias LoadError = NSPersistentContainer.LoadingError
     
     func test_loadContainerForModel_deliversModelNotFoundErrorOnInvalidModelName() {
@@ -19,9 +18,10 @@ extension CoreDataFeedStoreTests {
         let bundle = Bundle(for: CoreDataFeedStore.self)
         
         func containerLoad() throws -> NSPersistentContainer {
-            return try NSPersistentContainer.loadContainerForModel(named: modelName,
-                                                  storeDescription: emptyStoreDescription,
-                                                  in: bundle)
+            return try NSPersistentContainer
+                .loadContainerForModel(named: modelName,
+                                       storeDescription: emptyStoreDescription,
+                                       in: bundle)
         }
         
         XCTAssertThrowsError(try containerLoad()) { error in
