@@ -7,6 +7,12 @@
 
 import CoreData
 
+public protocol CustomCoreDataStore {
+    static func registerType()
+    static var storeTypeKey: String { get }
+    static var storeUUIDKey: String { get }
+}
+
 public enum CoreDataStore {
     public enum StorageType {
         case persistent(url: URL)
