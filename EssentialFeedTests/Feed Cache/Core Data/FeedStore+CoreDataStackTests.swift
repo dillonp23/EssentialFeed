@@ -13,13 +13,13 @@ import CoreData
 extension CoreDataFeedStoreTests {
     private typealias LoadError = NSPersistentContainer.LoadingError
     
-    func test_load_deliversModelNotFoundErrorOnIncorrectModelName() {
+    func test_loadContainerForModel_deliversModelNotFoundErrorOnInvalidModelName() {
         let modelName = "IncorrectModelName"
         let emptyStoreDescription = NSPersistentStoreDescription()
         let bundle = Bundle(for: CoreDataFeedStore.self)
         
         func containerLoad() throws -> NSPersistentContainer {
-            return try NSPersistentContainer.load(modelName: modelName,
+            return try NSPersistentContainer.loadContainerForModel(named: modelName,
                                                   storeDescription: emptyStoreDescription,
                                                   in: bundle)
         }

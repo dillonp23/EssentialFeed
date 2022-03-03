@@ -33,7 +33,7 @@ public enum CoreDataStack {
                 storeDescription.type = store.storeTypeKey
         }
 
-        return try NSPersistentContainer.load(modelName: modelName, storeDescription: storeDescription, in: bundle)
+        return try NSPersistentContainer.loadContainerForModel(named: modelName, storeDescription: storeDescription, in: bundle)
     }
 }
 
@@ -43,7 +43,7 @@ public extension NSPersistentContainer {
         case failedToLoadPersistentStores(Swift.Error)
     }
     
-    static func load(modelName name: String,
+    static func loadContainerForModel(named name: String,
                      storeDescription: NSPersistentStoreDescription,
                      in bundle: Bundle) throws -> NSPersistentContainer {
         guard let model = NSManagedObjectModel.with(name: name, in: bundle) else {
@@ -53,6 +53,10 @@ public extension NSPersistentContainer {
         let container = NSPersistentContainer(name: name, managedObjectModel: model)
         container.persistentStoreDescriptions = [storeDescription]
         
+        return try NSPersistentContainer.loadStoresIn(container: container)
+    }
+    
+    static func loadStoresIn(container: NSPersistentContainer) throws -> NSPersistentContainer {
         var loadingError: Swift.Error?
         container.loadPersistentStores { _, error in
             loadingError = error
