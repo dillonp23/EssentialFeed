@@ -30,6 +30,23 @@ class NSPersistentContainerTests: XCTestCase {
             }
         }
     }
+    
+    func test_loadStoresIn_deliversFailedToLoadPersistentStoresErrorOnLoadStoresFailure() {
+        let name = "FeedStore"
+        let model = NSManagedObjectModel.with(name: name, in: Bundle(for: CoreDataFeedStore.self))!
+        
+        let container = FailableContainer(name: name, managedObjectModel: model)
+        let storeDescription = NSPersistentStoreDescription(url: URL(fileURLWithPath: "/dev/null"))
+        container.persistentStoreDescriptions = [storeDescription]
+        
+        XCTAssertThrowsError(try NSPersistentContainer.loadStoresIn(container: container)) { error in
+            guard let thrownError = error as? LoadError, case let .failedToLoadPersistentStores(loadingError) = thrownError else {
+                return XCTFail("Expected to fail with `.failedToLoadPersistentStores`, got \(error)")
+            }
+            
+            XCTAssertEqual(anyNSError(), loadingError as NSError)
+        }
+    }
 }
 
 extension NSPersistentContainerTests {
