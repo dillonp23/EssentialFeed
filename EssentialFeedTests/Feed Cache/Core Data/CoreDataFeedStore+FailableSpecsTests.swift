@@ -33,7 +33,9 @@ extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     }
     
     func test_insert_hasNoSideEffectsOnFailedInsertion() {
+        let sut = makeSUT()
         
+        assertInsertHasNoSideEffectsOnFailedInsertion(usingStore: sut)
     }
     
     func test_delete_deliversErrorOnFailedDeletion() {
@@ -69,7 +71,7 @@ private final class FailableCoreDataStore: NSIncrementalStore {
     /// operation, a subsequent `.fetch` request will be passed to `execute(_:with:)` method
     /// which must succeed and return an empty array [] (representing an empty cache)
     override func execute(_ request: NSPersistentStoreRequest,
-                                 with context: NSManagedObjectContext?) throws -> Any {
+                          with context: NSManagedObjectContext?) throws -> Any {
         receivedRequests.insert(request.requestType)
         
         if request.requestType == .fetchRequestType && receivedRequests.contains(.saveRequestType) {
@@ -104,6 +106,7 @@ extension FailableCoreDataStore: CustomCoreDataStore {
     }
     
     public static func registerType() {
-        NSPersistentStoreCoordinator.registerStoreClass(FailableCoreDataStore.self, type: .init(rawValue: Self.storeTypeKey))
+        NSPersistentStoreCoordinator.registerStoreClass(FailableCoreDataStore.self,
+                                                        type: .init(rawValue: Self.storeTypeKey))
     }
 }
