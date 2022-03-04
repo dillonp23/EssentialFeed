@@ -27,7 +27,9 @@ extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     }
     
     func test_insert_deliversErrorOnFailedInsertion() {
+        let sut = makeSUT()
         
+        assertInsertDeliversErrorOnFailedInsertion(usingStore: sut)
     }
     
     func test_insert_hasNoSideEffectsOnFailedInsertion() {
