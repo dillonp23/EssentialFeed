@@ -15,7 +15,9 @@ extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     }
     
     func test_retrieve_deliversFailureOnFailedRetrieval() {
+        let sut = makeSUT()
         
+        assertRetrieveDeliversFailureOnFailedRetrieval(usingStore: sut)
     }
     
     func test_retrieve_hasNoSideEffectsOnFailedRetrieval() {
@@ -54,6 +56,10 @@ extension CoreDataFeedStoreTests {
 private final class FailableCoreDataStore: NSIncrementalStore {
     public override func loadMetadata() throws {
         self.metadata = [NSStoreTypeKey: Self.storeTypeKey, NSStoreUUIDKey: Self.storeUUIDKey]
+    }
+    
+    public override func execute(_ request: NSPersistentStoreRequest, with context: NSManagedObjectContext?) throws -> Any {
+        throw anyNSError()
     }
 }
 
