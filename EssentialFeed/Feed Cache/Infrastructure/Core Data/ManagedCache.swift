@@ -63,7 +63,7 @@ extension ManagedCache {
     }
     
     static func deleteAndSave(in context: NSManagedObjectContext) throws {
-        try ManagedCache.find(in: context).flatMap { context.delete($0) }
+        try? ManagedCache.find(in: context).flatMap { context.delete($0) }
         try context.save()
     }
 }
