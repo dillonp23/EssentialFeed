@@ -62,7 +62,20 @@ private final class FailableCoreDataStore: NSIncrementalStore {
         self.metadata = [NSStoreTypeKey: Self.storeTypeKey, NSStoreUUIDKey: Self.storeUUIDKey]
     }
     
-    public override func execute(_ request: NSPersistentStoreRequest, with context: NSManagedObjectContext?) throws -> Any {
+    private var receivedRequests = Set<NSPersistentStoreRequestType>()
+    
+    /// For side-effects tests, we first execute a `.save` (i.e. an insert or delete operation)
+    /// and throw an error to mock a failed deletion/insertion. After the failed insert/delete
+    /// operation, a subsequent `.fetch` request will be passed to `execute(_:with:)` method
+    /// which must succeed and return an empty array [] (representing an empty cache)
+    override func execute(_ request: NSPersistentStoreRequest,
+                                 with context: NSManagedObjectContext?) throws -> Any {
+        receivedRequests.insert(request.requestType)
+        
+        if request.requestType == .fetchRequestType && receivedRequests.contains(.saveRequestType) {
+            return []
+        }
+        
         throw anyNSError()
     }
 }
