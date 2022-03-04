@@ -32,4 +32,9 @@ extension FailableRetrieveFeedStoreSpecs where Self: CoreDataFeedStoreTests {
                                                         file: StaticString = #filePath, line: UInt = #line) {
         expect(sut, toCompleteRetrievalWith: .failure(anyNSError()), file: file, line: line)
     }
+    
+    func assertRetrieveHasNoSideEffectsOnFailedRetrieval(usingStore sut: FeedStore,
+                                                         file: StaticString = #filePath, line: UInt = #line) {
+        expect(sut, toCompleteRetrievalTwiceWith: .failure(anyNSError()), file: file, line: line)
+    }
 }

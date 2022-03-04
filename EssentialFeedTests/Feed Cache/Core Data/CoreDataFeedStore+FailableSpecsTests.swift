@@ -21,7 +21,9 @@ extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     }
     
     func test_retrieve_hasNoSideEffectsOnFailedRetrieval() {
+        let sut = makeSUT()
         
+        assertRetrieveHasNoSideEffectsOnFailedRetrieval(usingStore: sut)
     }
     
     func test_insert_deliversErrorOnFailedInsertion() {
