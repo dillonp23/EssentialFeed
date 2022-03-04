@@ -7,7 +7,7 @@
 
 import CoreData
 
-public protocol CustomCoreDataStore {
+public protocol CustomCoreDataStore: NSPersistentStore {
     static func registerType()
     static var storeTypeKey: String { get }
     static var storeUUIDKey: String { get }
