@@ -39,7 +39,9 @@ extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     }
     
     func test_delete_deliversErrorOnFailedDeletion() {
+        let sut = makeSUT()
         
+        assertDeleteDeliversErrorOnFailedDeletion(usingStore: sut)
     }
     
     func test_delete_hasNoSideEffectsOnFailedDeletion() {
