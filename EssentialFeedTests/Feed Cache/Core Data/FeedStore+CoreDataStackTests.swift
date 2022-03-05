@@ -29,6 +29,7 @@ class CoreDataStackTests: XCTestCase {
 
 // MARK: Helpers
 private final class InvalidCoreDataStore: NSIncrementalStore {
+    // Always throws error when registering i.e. container creation always fails
     override func loadMetadata() throws {
         throw anyNSError()
     }
@@ -36,15 +37,19 @@ private final class InvalidCoreDataStore: NSIncrementalStore {
 
 extension InvalidCoreDataStore: CustomCoreDataStore {
     public static var storeTypeKey: String {
-        "EssentialFeedTests.InvalidCoreDataStore"
+        return String(describing: self)
     }
     
-    fileprivate static var storeUUIDKey: String {
-        UUID().uuidString
+    public static var storeUUIDKey: String {
+        return "CoreDataStackTests+\(storeTypeKey)"
+    }
+    
+    static var storeMetadata: [String: Any] {
+        [NSStoreTypeKey: storeTypeKey, NSStoreUUIDKey: storeUUIDKey]
     }
     
     public static func registerType() {
         NSPersistentStoreCoordinator.registerStoreClass(InvalidCoreDataStore.self,
-                                                        forStoreType: Self.storeTypeKey)
+                                                        type: StoreType.init(rawValue: storeTypeKey))
     }
 }

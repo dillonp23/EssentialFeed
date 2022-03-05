@@ -11,6 +11,7 @@ public protocol CustomCoreDataStore: NSPersistentStore {
     static func registerType()
     static var storeTypeKey: String { get }
     static var storeUUIDKey: String { get }
+    static var storeMetadata: [String: Any] { get }
 }
 
 public enum CoreDataStack {
