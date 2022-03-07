@@ -39,9 +39,9 @@ public enum CoreDataStack {
 }
 
 public extension NSPersistentContainer {
-    enum LoadingError: Swift.Error {
+    enum LoadingError: Error {
         case modelNotFound
-        case failedToLoadPersistentStores(Swift.Error)
+        case failedToLoadPersistentStores(Error)
     }
     
     static func loadContainerForModel(named name: String,
@@ -58,7 +58,7 @@ public extension NSPersistentContainer {
     }
     
     static func loadStoresIn(container: NSPersistentContainer) throws -> NSPersistentContainer {
-        var loadingError: Swift.Error?
+        var loadingError: Error?
         container.loadPersistentStores { _, error in
             loadingError = error
         }
