@@ -22,6 +22,7 @@ public final class CoreDataFeedStore: FeedStore {
                 try ManagedCache.createUniqueInstanceAndSave(in: context, using: (feed, timestamp))
                 completion(nil)
             } catch {
+                context.rollback()
                 completion(error)
             }
         }
@@ -33,6 +34,7 @@ public final class CoreDataFeedStore: FeedStore {
                 try ManagedCache.deleteAndSave(in: context)
                 completion(nil)
             } catch {
+                context.rollback()
                 completion(error)
             }
         }
