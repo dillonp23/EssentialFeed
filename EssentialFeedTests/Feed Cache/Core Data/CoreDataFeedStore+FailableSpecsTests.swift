@@ -10,7 +10,7 @@ import XCTest
 import EssentialFeed
 
 extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
-    func test_init_isAbleToLoadPersistentStoresForFailableStore() {
+    func test_init_canRegisterCustomStoreTypeAndLoadPersistentStores() {
         _ = makeSUT()
     }
     
@@ -34,6 +34,8 @@ extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     
     func test_insert_hasNoSideEffectsOnFailedInsertion() {
         let sut = makeSUT()
+        let stub = NSManagedObjectContext.expectsEmptyRetrieval()
+        stub.startIntercepting()
         
         assertInsertHasNoSideEffectsOnFailedInsertion(usingStore: sut)
     }
@@ -46,6 +48,8 @@ extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     
     func test_delete_hasNoSideEffectsOnFailedDeletion() {
         let sut = makeSUT()
+        let stub = NSManagedObjectContext.expectsEmptyRetrieval()
+        stub.startIntercepting()
         
         assertDeleteHasNoSideEffectsOnFailedDeletion(usingStore: sut)
     }
@@ -62,7 +66,6 @@ extension CoreDataFeedStoreTests {
     }
 }
 
-// MARK: Helper Class to Test Failable Specs
 private final class FailableCoreDataStore: NSIncrementalStore {
     public override func loadMetadata() throws {
         self.metadata = FailableCoreDataStore.storeMetadata
@@ -76,21 +79,9 @@ private final class FailableCoreDataStore: NSIncrementalStore {
             super.metadata = newValue
         }
     }
-    
-    private var receivedRequests = Set<NSPersistentStoreRequestType>()
-    
-    /// For side-effects tests, we first execute a `.save` (i.e. an insert or delete operation)
-    /// and throw an error to mock a failed deletion/insertion. After the failed insert/delete
-    /// operation, a subsequent `.fetch` request will be passed to `execute(_:with:)` method
-    /// which must succeed and return an empty array [] (representing an empty cache)
+
     override func execute(_ request: NSPersistentStoreRequest,
                           with context: NSManagedObjectContext?) throws -> Any {
-        receivedRequests.insert(request.requestType)
-        
-        if request.requestType == .fetchRequestType && receivedRequests.contains(.saveRequestType) {
-            return []
-        }
-        
         throw anyNSError()
     }
 }
