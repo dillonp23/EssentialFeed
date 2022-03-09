@@ -51,6 +51,7 @@
 		51A5561927B5F1E700FA8034 /* RemoteFeedLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51A5561827B5F1E700FA8034 /* RemoteFeedLoader.swift */; };
 		51C5D46227C40F200001C134 /* LoadCachedFeedUseCaseTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C5D46127C40F200001C134 /* LoadCachedFeedUseCaseTests.swift */; };
 		51C5D46527C4114E0001C134 /* FeedStoreSpy.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51C5D46427C4114E0001C134 /* FeedStoreSpy.swift */; };
+		51D584DA27D9441800549913 /* FailableCoreDataStub.swift in Sources */ = {isa = PBXBuildFile; fileRef = 51D584D927D9441800549913 /* FailableCoreDataStub.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -120,6 +121,7 @@
 		51A5561827B5F1E700FA8034 /* RemoteFeedLoader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RemoteFeedLoader.swift; sourceTree = "<group>"; };
 		51C5D46127C40F200001C134 /* LoadCachedFeedUseCaseTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LoadCachedFeedUseCaseTests.swift; sourceTree = "<group>"; };
 		51C5D46427C4114E0001C134 /* FeedStoreSpy.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeedStoreSpy.swift; sourceTree = "<group>"; };
+		51D584D927D9441800549913 /* FailableCoreDataStub.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FailableCoreDataStub.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -297,6 +299,7 @@
 				5185AFDD27D1916100DC96D7 /* CoreDataFeedStore+FailableSpecsTests.swift */,
 				5185AFD827D0565800DC96D7 /* FeedStore+NSPersistentContainerTests.swift */,
 				5185AFDB27D1724700DC96D7 /* FeedStore+CoreDataStackTests.swift */,
+				51D584D927D9441800549913 /* FailableCoreDataStub.swift */,
 			);
 			path = "Core Data";
 			sourceTree = "<group>";
@@ -557,6 +560,7 @@
 				513F060127B9F17D0082B2ED /* URLSessionHTTPClientTests.swift in Sources */,
 				5143CCA227CC35F500DEF38F /* XCTestCase+FailableInsertFeedStoreSpecs.swift in Sources */,
 				51C5D46527C4114E0001C134 /* FeedStoreSpy.swift in Sources */,
+				51D584DA27D9441800549913 /* FailableCoreDataStub.swift in Sources */,
 				513A65CF27C5A263005D8EF3 /* ValidateCachedFeedUseCaseTests.swift in Sources */,
 				5185AFD927D0565800DC96D7 /* FeedStore+NSPersistentContainerTests.swift in Sources */,
 				513A65D327C5B13B005D8EF3 /* SharedTestHelpers.swift in Sources */,
