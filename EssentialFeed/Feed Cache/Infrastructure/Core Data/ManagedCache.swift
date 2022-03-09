@@ -50,20 +50,23 @@ extension ManagedCache {
         return try context.fetch(request).first
     }
     
-    /// Will check whether there is a previously saved cache, and if so, first delete it
-    /// before creating and saving a new unique `ManagedCache` instance.
-    static func createUniqueInstanceAndSave(in context: NSManagedObjectContext,
-                                            using localCache: (feed: [LocalFeedImage], time: Date)) throws {
-        try ManagedCache.deleteAndSave(in: context)
+    /// Deletes previous cache (if present) then creates a new unique `ManagedCache`
+    /// instance, performing all operations in the provided `NSManagedObjectContext`.
+    @discardableResult
+    static func replace(with localCache: (feed: [LocalFeedImage], time: Date),
+                        in context: NSManagedObjectContext) throws -> NSManagedObjectContext {
+        try ManagedCache.deletePrevious(in: context)
         
         let cache = ManagedCache(context: context)
         cache.timestamp = localCache.time
         cache.feed = ManagedCache.mapOrderedSet(from: localCache.feed, in: context)
-        try context.save()
+        return context
     }
     
-    static func deleteAndSave(in context: NSManagedObjectContext) throws {
-        try? ManagedCache.find(in: context).flatMap { context.delete($0) }
-        try context.save()
+    /// Checks if there is a previously saved `ManagedCache` instance and deletes it.
+    @discardableResult
+    static func deletePrevious(in context: NSManagedObjectContext) throws -> NSManagedObjectContext {
+        try ManagedCache.find(in: context).flatMap { context.delete($0) }
+        return context
     }
 }
