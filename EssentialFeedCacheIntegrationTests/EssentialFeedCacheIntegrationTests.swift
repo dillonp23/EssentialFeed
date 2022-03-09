@@ -16,8 +16,8 @@ class EssentialFeedCacheIntegrationTests: XCTestCase {
     }
     
     override func tearDown() {
-        super.tearDown()
         clearIntegrationTestCacheArtifacts()
+        super.tearDown()
     }
     
     func test_load_deliversNoItemsOnEmptyCache() {
