@@ -15,22 +15,14 @@ class ManagedCache: NSManagedObject {
 
 extension ManagedCache {
     var localFeed: [LocalFeedImage] {
+        let managedFeed = self.feed.compactMap { $0 as? ManagedFeedImage }
         return managedFeed.map { $0.localRepresentation }
-    }
-    
-    private var managedFeed: [ManagedFeedImage] {
-        return self.feed.compactMap { $0 as? ManagedFeedImage }
     }
     
     static func mapOrderedSet(from localFeed: [LocalFeedImage],
                               in context: NSManagedObjectContext) -> NSOrderedSet {
         return NSOrderedSet(array: localFeed.map {
-            let managedImage = ManagedFeedImage(context: context)
-            managedImage.id = $0.id
-            managedImage.imageDescription = $0.description
-            managedImage.location = $0.location
-            managedImage.url = $0.url
-            return managedImage
+            ManagedFeedImage.mapFrom($0, in: context)
         })
     }
 }

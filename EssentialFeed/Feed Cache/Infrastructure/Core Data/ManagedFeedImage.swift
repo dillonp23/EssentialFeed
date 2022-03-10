@@ -23,4 +23,13 @@ extension ManagedFeedImage {
                               location: self.location,
                               url: self.url)
     }
+    
+    static func mapFrom(_ local: LocalFeedImage, in context: NSManagedObjectContext) -> ManagedFeedImage {
+        let managedImage = ManagedFeedImage(context: context)
+        managedImage.id = local.id
+        managedImage.imageDescription = local.description
+        managedImage.location = local.location
+        managedImage.url = local.url
+        return managedImage
+    }
 }
