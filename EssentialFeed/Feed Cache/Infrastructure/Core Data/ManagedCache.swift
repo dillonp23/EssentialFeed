@@ -35,7 +35,7 @@ extension ManagedCache {
     ///
     /// Note: an error is thrown only if the `NSFetchRequest` fails, such as if there
     /// is underlying data corruption or an issue with the store.
-    static func find(in context: NSManagedObjectContext) throws -> ManagedCache? {
+    static func fetchLatest(in context: NSManagedObjectContext) throws -> ManagedCache? {
         let request = NSFetchRequest<ManagedCache>(entityName: self.entity().name!)
         request.returnsObjectsAsFaults = false
         
@@ -58,7 +58,7 @@ extension ManagedCache {
     /// Checks if there is a previously saved `ManagedCache` instance and deletes it.
     @discardableResult
     static func deletePrevious(in context: NSManagedObjectContext) throws -> NSManagedObjectContext {
-        try ManagedCache.find(in: context).flatMap { context.delete($0) }
+        try ManagedCache.fetchLatest(in: context).flatMap { context.delete($0) }
         return context
     }
 }
