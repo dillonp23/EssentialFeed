@@ -53,6 +53,7 @@ public final class CoreDataFeedStore: FeedStore {
     
     private static func mapResultFrom(retrieved cache: ManagedCache?) -> RetrievedCachedFeedResult {
         guard let cache = cache else { return .empty }
+        
         return .found(feed: cache.localFeed, timestamp: cache.timestamp)
     }
     

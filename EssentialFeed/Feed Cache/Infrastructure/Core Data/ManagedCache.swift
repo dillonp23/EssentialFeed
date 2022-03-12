@@ -15,8 +15,7 @@ final class ManagedCache: NSManagedObject {
 
 extension ManagedCache {
     var localFeed: [LocalFeedImage] {
-        let managedFeed = self.feed.compactMap { $0 as? ManagedFeedImage }
-        return managedFeed.map { $0.localRepresentation }
+        return feed.compactMap { ($0 as? ManagedFeedImage)?.localRepresentation }
     }
     
     static func mapOrderedSet(from localFeed: [LocalFeedImage],
