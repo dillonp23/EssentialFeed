@@ -78,3 +78,11 @@ public extension NSManagedObjectModel {
             .flatMap { NSManagedObjectModel(contentsOf: $0) }
     }
 }
+
+public extension NSManagedObjectContext {
+    func saveIfNeeded() throws {
+        if hasChanges {
+            try save()
+        }
+    }
+}
