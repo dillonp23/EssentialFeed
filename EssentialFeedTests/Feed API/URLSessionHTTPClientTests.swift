@@ -16,8 +16,8 @@ class URLSessionHTTPClientTests: XCTestCase {
     }
     
     override func tearDown() {
-        super.tearDown()
         URLProtocolStub.stopInterceptingRequests()
+        super.tearDown()
     }
     
     /// If we invoke the `get(from:)` method with a url, then we expect a request
