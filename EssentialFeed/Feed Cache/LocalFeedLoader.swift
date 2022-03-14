@@ -16,10 +16,12 @@ public final class LocalFeedLoader: FeedLoader {
         self.currentDate = currentDate
     }
     
-    public enum ValidationResult {
+    public enum ValidationStatus {
         case validated
-        case deleted(Error?)
+        case deleted
     }
+    
+    public typealias ValidationResult = Result<ValidationStatus, Error>
     
     public func validateCache(completion: @escaping (ValidationResult) -> Void = { _ in }) {
         store.retrieve { [weak self] result in
@@ -31,14 +33,17 @@ public final class LocalFeedLoader: FeedLoader {
                 case let .found(_, timestamp) where self.statusFor(timestamp) == .expired:
                     self.deleteInvalidCache(completion: completion)
                 case .empty, .found:
-                    completion(.validated)
+                    completion(.success(.validated))
             }
         }
     }
     
     private func deleteInvalidCache(completion: @escaping (ValidationResult) -> Void) {
-        store.deleteCachedFeed { error in
-            completion(.deleted(error))
+        store.deleteCachedFeed { deletionError in
+            if let error = deletionError {
+                return completion(.failure(error))
+            }
+            completion(.success(.deleted))
         }
     }
     
