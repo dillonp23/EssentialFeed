@@ -17,7 +17,7 @@ class EssentialFeedAPIEndToEndTests: XCTestCase {
         
         let exp = expectation(description: "Wait for load completion")
         
-        var receivedResult: LoadFeedResult?
+        var receivedResult: FeedLoader.Result?
         feedLoader.load { result in
             receivedResult = result
             exp.fulfill()
@@ -29,7 +29,7 @@ class EssentialFeedAPIEndToEndTests: XCTestCase {
         assertReceivedDataMatchesTestData(receivedResult)
     }
     
-    private func assertReceivedDataMatchesTestData(_ result: LoadFeedResult?, file: StaticString = #filePath, line: UInt = #line) {
+    private func assertReceivedDataMatchesTestData(_ result: FeedLoader.Result?, file: StaticString = #filePath, line: UInt = #line) {
         let failureMessage = "Expected success result with `[FeedImage]`, but got"
         switch result {
             case .success(let imageFeed):

@@ -71,9 +71,7 @@ extension LocalFeedLoader {
 }
 
 extension LocalFeedLoader {
-    public typealias LoadResult = LoadFeedResult
-    
-    public func load(completion: @escaping (LoadResult) -> Void) {
+    public func load(completion: @escaping (FeedLoader.Result) -> Void) {
         store.retrieve { [weak self] result in
             
             guard let self = self else { return }
