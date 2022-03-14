@@ -30,9 +30,9 @@ public final class LocalFeedLoader: FeedLoader {
             switch result {
                 case .failure:
                     self.deleteInvalidCache(completion: completion)
-                case let .found(_, timestamp) where self.statusFor(timestamp) == .expired:
+                case let .success(.some(cache)) where self.statusFor(cache.timestamp) == .expired:
                     self.deleteInvalidCache(completion: completion)
-                case .empty, .found:
+                case .success:
                     completion(.success(.validated))
             }
         }
@@ -82,11 +82,11 @@ extension LocalFeedLoader {
             guard let self = self else { return }
             
             switch result {
-                case let .found(feed, timestamp) where self.statusFor(timestamp) == .notExpired:
-                    completion(.success(feed.modelRepresentation))
+                case let .success(.some(cache)) where self.statusFor(cache.timestamp) == .notExpired:
+                    completion(.success(cache.feed.modelRepresentation))
                 case let .failure(error):
                     completion(.failure(error))
-                case .found, .empty:
+                case .success:
                     completion(.success([]))
             }
         }

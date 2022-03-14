@@ -51,10 +51,10 @@ public final class CoreDataFeedStore: FeedStore {
         }
     }
     
-    private static func mapResultFrom(retrieved cache: ManagedCache?) -> RetrievedCachedFeedResult {
-        guard let cache = cache else { return .empty }
+    private static func mapResultFrom(retrieved cache: ManagedCache?) -> FeedStore.RetrievalResult {
+        guard let cache = cache else { return .success(.none) }
         
-        return .found(feed: cache.localFeed, timestamp: cache.timestamp)
+        return .success((feed: cache.localFeed, timestamp: cache.timestamp))
     }
     
     private func perform(_ action: @escaping (NSManagedObjectContext) -> Void) {
