@@ -30,7 +30,11 @@ class FeedStoreSpy: FeedStore {
     }
     
     func completeDeletion(error: Error? = nil, at index: Int = 0) {
-        deletionCompletions[index](error)
+        if let error = error {
+            deletionCompletions[index](.failure(error))
+        } else {
+            deletionCompletions[index](.success(()))
+        }
     }
     
     func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping InsertionCompletion) {
@@ -39,7 +43,11 @@ class FeedStoreSpy: FeedStore {
     }
     
     func completeInsertion(error: Error? = nil, at index: Int = 0) {
-        insertionCompletions[index](error)
+        if let error = error {
+            insertionCompletions[index](.failure(error))
+        } else {
+            insertionCompletions[index](.success(()))
+        }
     }
     
     func retrieve(completion: @escaping RetrievalCompletion) {

@@ -20,10 +20,10 @@ public final class CoreDataFeedStore: FeedStore {
         perform { context in
             do {
                 try ManagedCache.replace(with: (feed, timestamp), in: context).saveIfNeeded()
-                completion(nil)
+                completion(.success(()))
             } catch {
                 context.rollback()
-                completion(error)
+                completion(.failure(error))
             }
         }
     }
@@ -32,10 +32,10 @@ public final class CoreDataFeedStore: FeedStore {
         perform { context in
             do {
                 try ManagedCache.deletePrevious(in: context).saveIfNeeded()
-                completion(nil)
+                completion(.success(()))
             } catch {
                 context.rollback()
-                completion(error)
+                completion(.failure(error))
             }
         }
     }

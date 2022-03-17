@@ -39,11 +39,13 @@ public final class LocalFeedLoader: FeedLoader {
     }
     
     private func deleteInvalidCache(completion: @escaping (ValidationResult) -> Void) {
-        store.deleteCachedFeed { deletionError in
-            if let error = deletionError {
-                return completion(.failure(error))
+        store.deleteCachedFeed { deletionResult in
+            switch deletionResult {
+                case .success:
+                    completion(.success(.deleted))
+                case let .failure(error):
+                    completion(.failure(error))
             }
-            completion(.success(.deleted))
         }
     }
     
@@ -53,24 +55,26 @@ public final class LocalFeedLoader: FeedLoader {
 }
 
 extension LocalFeedLoader {
-    public typealias SaveResult = Error?
+    public typealias SaveResult = Result<Void, Error>
     
     public func save(_ feed: [FeedImage], completion: @escaping (SaveResult) -> Void) {
-        store.deleteCachedFeed { [weak self] deletionError in
+        store.deleteCachedFeed { [weak self] deletionResult in
             guard let self = self else { return }
             
-            guard deletionError == nil else {
-                return completion(deletionError)
+            switch deletionResult {
+                case .success:
+                    self.insertToCache(feed, completion: completion)
+                case let .failure(error):
+                    completion(.failure(error))
             }
-            
-            self.insertToCache(feed, completion: completion)
         }
     }
     
     private func insertToCache(_ feed: [FeedImage], completion: @escaping (SaveResult) -> Void) {
-        store.insert(feed.localRepresentation, currentDate()) { [weak self] insertionError in
+        store.insert(feed.localRepresentation, currentDate()) { [weak self] insertionResult in
             guard self != nil else { return }
-            completion(insertionError)
+            
+            completion(insertionResult)
         }
     }
 }
