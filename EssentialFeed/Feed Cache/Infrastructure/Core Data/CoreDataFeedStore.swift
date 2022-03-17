@@ -18,43 +18,34 @@ public final class CoreDataFeedStore: FeedStore {
     
     public func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping InsertionCompletion) {
         perform { context in
-            do {
+            completion(Result {
                 try ManagedCache.replace(with: (feed, timestamp), in: context).saveIfNeeded()
-                completion(.success(()))
-            } catch {
+            }.mapError({
                 context.rollback()
-                completion(.failure(error))
-            }
+                return $0
+            }))
         }
     }
     
     public func deleteCachedFeed(completion: @escaping DeletionCompletion) {
         perform { context in
-            do {
+            completion(Result {
                 try ManagedCache.deletePrevious(in: context).saveIfNeeded()
-                completion(.success(()))
-            } catch {
+            }.mapError({
                 context.rollback()
-                completion(.failure(error))
-            }
+                return $0
+            }))
         }
     }
     
     public func retrieve(completion: @escaping RetrievalCompletion) {
         perform { context in
-            do {
-                let cache = try ManagedCache.fetchLatest(in: context)
-                completion(Self.mapResultFrom(retrieved: cache))
-            } catch {
-                completion(.failure(error))
-            }
+            completion(Result {
+                try ManagedCache.fetchLatest(in: context).map { cache in
+                    return (feed: cache.localFeed, timestamp: cache.timestamp)
+                }
+            })
         }
-    }
-    
-    private static func mapResultFrom(retrieved cache: ManagedCache?) -> FeedStore.RetrievalResult {
-        guard let cache = cache else { return .success(.none) }
-        
-        return .success((feed: cache.localFeed, timestamp: cache.timestamp))
     }
     
     private func perform(_ action: @escaping (NSManagedObjectContext) -> Void) {
