@@ -9,7 +9,8 @@ import Foundation
 import EssentialFeed
 
 class FeedStoreSpy: FeedStore {
-    typealias OperationCompletion = FeedStore.OperationCompletion
+    typealias DeletionCompletion = FeedStore.DeletionCompletion
+    typealias InsertionCompletion = FeedStore.InsertionCompletion
     typealias RetrievalCompletion = FeedStore.RetrievalCompletion
     
     enum Message: Equatable {
@@ -19,11 +20,11 @@ class FeedStoreSpy: FeedStore {
     }
     
     private(set) var receivedMessages = [Message]()
-    private(set) var deletionCompletions = [OperationCompletion]()
-    private(set) var insertionCompletions = [OperationCompletion]()
+    private(set) var deletionCompletions = [DeletionCompletion]()
+    private(set) var insertionCompletions = [InsertionCompletion]()
     private(set) var retrievalCompletions = [RetrievalCompletion]()
     
-    func deleteCachedFeed(completion: @escaping OperationCompletion) {
+    func deleteCachedFeed(completion: @escaping DeletionCompletion) {
         receivedMessages.append(.deleteCachedFeed)
         deletionCompletions.append(completion)
     }
@@ -32,7 +33,7 @@ class FeedStoreSpy: FeedStore {
         deletionCompletions[index](error)
     }
     
-    func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
+    func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping InsertionCompletion) {
         receivedMessages.append(.insert(feed, timestamp))
         insertionCompletions.append(completion)
     }

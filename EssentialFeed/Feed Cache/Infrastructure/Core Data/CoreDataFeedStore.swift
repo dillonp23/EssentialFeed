@@ -16,7 +16,7 @@ public final class CoreDataFeedStore: FeedStore {
         self.moc = container.newBackgroundContext()
     }
     
-    public func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
+    public func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping InsertionCompletion) {
         perform { context in
             do {
                 try ManagedCache.replace(with: (feed, timestamp), in: context).saveIfNeeded()
@@ -28,7 +28,7 @@ public final class CoreDataFeedStore: FeedStore {
         }
     }
     
-    public func deleteCachedFeed(completion: @escaping OperationCompletion) {
+    public func deleteCachedFeed(completion: @escaping DeletionCompletion) {
         perform { context in
             do {
                 try ManagedCache.deletePrevious(in: context).saveIfNeeded()
