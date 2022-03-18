@@ -131,8 +131,8 @@ extension CacheFeedUseCaseTests {
         let exp = expectation(description: "Wait for save completion")
         
         var capturedError: NSError?
-        sut.save(mockUniqueImageFeed()) { error in
-            capturedError = error as NSError?
+        sut.save(mockUniqueImageFeed()) { result in
+            if case let .failure(error) = result { capturedError = error as NSError? }
             exp.fulfill()
         }
         

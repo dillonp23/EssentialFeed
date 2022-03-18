@@ -16,10 +16,12 @@ public final class LocalFeedLoader: FeedLoader {
         self.currentDate = currentDate
     }
     
-    public enum ValidationResult {
+    public enum ValidationStatus {
         case validated
-        case deleted(Error?)
+        case deleted
     }
+    
+    public typealias ValidationResult = Result<ValidationStatus, Error>
     
     public func validateCache(completion: @escaping (ValidationResult) -> Void = { _ in }) {
         store.retrieve { [weak self] result in
@@ -28,17 +30,22 @@ public final class LocalFeedLoader: FeedLoader {
             switch result {
                 case .failure:
                     self.deleteInvalidCache(completion: completion)
-                case let .found(_, timestamp) where self.statusFor(timestamp) == .expired:
+                case let .success(.some(cache)) where self.statusFor(cache.timestamp) == .expired:
                     self.deleteInvalidCache(completion: completion)
-                case .empty, .found:
-                    completion(.validated)
+                case .success:
+                    completion(.success(.validated))
             }
         }
     }
     
     private func deleteInvalidCache(completion: @escaping (ValidationResult) -> Void) {
-        store.deleteCachedFeed { error in
-            completion(.deleted(error))
+        store.deleteCachedFeed { deletionResult in
+            switch deletionResult {
+                case .success:
+                    completion(.success(.deleted))
+                case let .failure(error):
+                    completion(.failure(error))
+            }
         }
     }
     
@@ -48,42 +55,42 @@ public final class LocalFeedLoader: FeedLoader {
 }
 
 extension LocalFeedLoader {
-    public typealias SaveResult = Error?
+    public typealias SaveResult = Result<Void, Error>
     
     public func save(_ feed: [FeedImage], completion: @escaping (SaveResult) -> Void) {
-        store.deleteCachedFeed { [weak self] deletionError in
+        store.deleteCachedFeed { [weak self] deletionResult in
             guard let self = self else { return }
             
-            guard deletionError == nil else {
-                return completion(deletionError)
+            switch deletionResult {
+                case .success:
+                    self.insertToCache(feed, completion: completion)
+                case let .failure(error):
+                    completion(.failure(error))
             }
-            
-            self.insertToCache(feed, completion: completion)
         }
     }
     
     private func insertToCache(_ feed: [FeedImage], completion: @escaping (SaveResult) -> Void) {
-        store.insert(feed.localRepresentation, currentDate()) { [weak self] insertionError in
+        store.insert(feed.localRepresentation, currentDate()) { [weak self] insertionResult in
             guard self != nil else { return }
-            completion(insertionError)
+            
+            completion(insertionResult)
         }
     }
 }
 
 extension LocalFeedLoader {
-    public typealias LoadResult = LoadFeedResult
-    
-    public func load(completion: @escaping (LoadResult) -> Void) {
+    public func load(completion: @escaping (FeedLoader.Result) -> Void) {
         store.retrieve { [weak self] result in
             
             guard let self = self else { return }
             
             switch result {
-                case let .found(feed, timestamp) where self.statusFor(timestamp) == .notExpired:
-                    completion(.success(feed.modelRepresentation))
+                case let .success(.some(cache)) where self.statusFor(cache.timestamp) == .notExpired:
+                    completion(.success(cache.feed.modelRepresentation))
                 case let .failure(error):
                     completion(.failure(error))
-                case .found, .empty:
+                case .success:
                     completion(.success([]))
             }
         }

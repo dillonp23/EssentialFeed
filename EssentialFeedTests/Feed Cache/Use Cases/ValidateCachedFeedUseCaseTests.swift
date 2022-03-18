@@ -83,7 +83,7 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
         let anyNonEmptyFeed = mockUniqueFeedWithLocalRep().localRepresentation
         let cacheDeletionError = anyNSError()
         
-        expect(sut, toCompleteValidationWith: .deleted(cacheDeletionError), forAction: {
+        expect(sut, toCompleteValidationWith: .failure(cacheDeletionError), forAction: {
             store.completeRetrievalSuccessfully(with: anyNonEmptyFeed, timestamp: expiredTimestamp)
             store.completeDeletion(error: cacheDeletionError)
         })
@@ -96,7 +96,7 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
         
         let anyNonEmptyFeed = mockUniqueFeedWithLocalRep().localRepresentation
         
-        expect(sut, toCompleteValidationWith: .deleted(nil), forAction: {
+        expect(sut, toCompleteValidationWith: .success(.deleted), forAction: {
             store.completeRetrievalSuccessfully(with: anyNonEmptyFeed, timestamp: expiredTimestamp)
             store.completeDeletion()
         })
@@ -105,7 +105,7 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
     func test_validateCache_deliversValidatedResultForEmptyCache() {
         let (sut, store) = makeSUT()
         
-        expect(sut, toCompleteValidationWith: .validated, forAction: {
+        expect(sut, toCompleteValidationWith: .success(.validated), forAction: {
             store.completeRetrievalSuccessfully(with: [], timestamp: Date())
         })
     }
@@ -117,7 +117,7 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
         
         let anyNonEmptyFeed = mockUniqueFeedWithLocalRep().localRepresentation
         
-        expect(sut, toCompleteValidationWith: .validated, forAction: {
+        expect(sut, toCompleteValidationWith: .success(.validated), forAction: {
             store.completeRetrievalSuccessfully(with: anyNonEmptyFeed, timestamp: nonExpiredTimestamp)
         })
     }
@@ -125,7 +125,7 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
     func test_validateCache_deliversValidatedResultAndDoesNotRequestCacheDeletionOnEmptyCache() {
         let (sut, store) = makeSUT()
         
-        expect(sut, toCompleteValidationWith: .validated, forAction: {
+        expect(sut, toCompleteValidationWith: .success(.validated), forAction: {
             store.completeRetrievalSuccessfully(with: [], timestamp: Date())
             XCTAssertEqual(store.receivedMessages, [.retrieve])
         })
@@ -138,7 +138,7 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
         
         let anyNonEmptyFeed = mockUniqueFeedWithLocalRep().localRepresentation
         
-        expect(sut, toCompleteValidationWith: .validated, forAction: {
+        expect(sut, toCompleteValidationWith: .success(.validated), forAction: {
             store.completeRetrievalSuccessfully(with: anyNonEmptyFeed, timestamp: nonExpiredTimestamp)
             XCTAssertEqual(store.receivedMessages, [.retrieve])
         })
@@ -178,9 +178,9 @@ class ValidateCachedFeedUseCaseTests: XCTestCase {
 
         sut.validateCache { receivedResult in
             switch (expectedResult, receivedResult) {
-                case (.validated, .validated):
+                case (.success(.validated), .success(.validated)), (.success(.deleted), .success(.deleted)):
                     break
-                case let (.deleted(expectedError as NSError?), .deleted(receivedError as NSError?)):
+                case let (.failure(expectedError as NSError?), .failure(receivedError as NSError?)):
                     XCTAssertEqual(expectedError, receivedError, file: file, line: line)
                 default:
                     XCTFail("Expected result `.\(expectedResult)`, got `.\(receivedResult)` instead", file: file, line: line)

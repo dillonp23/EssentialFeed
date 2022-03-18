@@ -16,29 +16,27 @@ public final class RemoteFeedLoader: FeedLoader {
         case invalidData
     }
     
-    public typealias Result = LoadFeedResult
-    
     public init(client: HTTPClient, url: URL) {
         self.client = client
         self.url = url
     }
     
-    public func load(completion: @escaping (Result) -> Void) {
+    public func load(completion: @escaping (FeedLoader.Result) -> Void) {
         client.get(from: url) { [weak self] result in
             
             /// Prevent completion if self has been deallocated
             guard self != nil else { return }
             
             switch result {
-                case let .success(data, response):
+                case let .success((data, response)):
                     completion(RemoteFeedLoader.mapResultFrom(data, with: response))
                 case .failure:
-                    completion(.failure(RemoteFeedLoader.Error.connectivity))
+                    completion(.failure(Error.connectivity))
             }
         }
     }
     
-    private static func mapResultFrom(_ data: Data, with response: HTTPURLResponse) -> Result {
+    private static func mapResultFrom(_ data: Data, with response: HTTPURLResponse) -> FeedLoader.Result {
         guard let remoteItems = try? RemoteFeedMapper.mapRemoteItemsFrom(data, with: response) else {
             return .failure(Error.invalidData)
         }

@@ -9,7 +9,8 @@ import Foundation
 import EssentialFeed
 
 class FeedStoreSpy: FeedStore {
-    typealias OperationCompletion = FeedStore.OperationCompletion
+    typealias DeletionCompletion = FeedStore.DeletionCompletion
+    typealias InsertionCompletion = FeedStore.InsertionCompletion
     typealias RetrievalCompletion = FeedStore.RetrievalCompletion
     
     enum Message: Equatable {
@@ -19,26 +20,34 @@ class FeedStoreSpy: FeedStore {
     }
     
     private(set) var receivedMessages = [Message]()
-    private(set) var deletionCompletions = [OperationCompletion]()
-    private(set) var insertionCompletions = [OperationCompletion]()
+    private(set) var deletionCompletions = [DeletionCompletion]()
+    private(set) var insertionCompletions = [InsertionCompletion]()
     private(set) var retrievalCompletions = [RetrievalCompletion]()
     
-    func deleteCachedFeed(completion: @escaping OperationCompletion) {
+    func deleteCachedFeed(completion: @escaping DeletionCompletion) {
         receivedMessages.append(.deleteCachedFeed)
         deletionCompletions.append(completion)
     }
     
     func completeDeletion(error: Error? = nil, at index: Int = 0) {
-        deletionCompletions[index](error)
+        if let error = error {
+            deletionCompletions[index](.failure(error))
+        } else {
+            deletionCompletions[index](.success(()))
+        }
     }
     
-    func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping OperationCompletion) {
+    func insert(_ feed: [LocalFeedImage], _ timestamp: Date, completion: @escaping InsertionCompletion) {
         receivedMessages.append(.insert(feed, timestamp))
         insertionCompletions.append(completion)
     }
     
     func completeInsertion(error: Error? = nil, at index: Int = 0) {
-        insertionCompletions[index](error)
+        if let error = error {
+            insertionCompletions[index](.failure(error))
+        } else {
+            insertionCompletions[index](.success(()))
+        }
     }
     
     func retrieve(completion: @escaping RetrievalCompletion) {
@@ -53,9 +62,9 @@ class FeedStoreSpy: FeedStore {
     func completeRetrievalSuccessfully(with feed: [LocalFeedImage], timestamp: Date = .now, at index: Int = 0) {
         
         if feed.isEmpty {
-            return retrievalCompletions[index](.empty)
+            return retrievalCompletions[index](.success(.none))
         }
         
-        retrievalCompletions[index](.found(feed: feed, timestamp: timestamp))
+        retrievalCompletions[index](.success((feed: feed, timestamp: timestamp)))
     }
 }

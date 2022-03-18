@@ -13,13 +13,12 @@ import Foundation
 /// Use the static `map(_:_:)` method to transform data received into an
 /// array of `[RemoteFeedItem]` and return to `RemoteFeedLoader`
 /// to handle the `[FeedImage]` mapping and result completion
-internal final class RemoteFeedMapper {
+final class RemoteFeedMapper {
     private struct Root: Decodable {
         let items: [RemoteFeedItem]
     }
     
-    internal static func mapRemoteItemsFrom(_ data: Data,
-                                        with response: HTTPURLResponse) throws -> [RemoteFeedItem] {
+    static func mapRemoteItemsFrom(_ data: Data, with response: HTTPURLResponse) throws -> [RemoteFeedItem] {
         guard isValid(response), let root = try? mapRootFrom(data) else {
             throw RemoteFeedLoader.Error.invalidData
         }
