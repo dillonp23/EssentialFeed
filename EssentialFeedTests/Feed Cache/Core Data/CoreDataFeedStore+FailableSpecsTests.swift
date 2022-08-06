@@ -8,6 +8,7 @@
 import Foundation
 import XCTest
 import EssentialFeed
+import CoreData
 
 extension CoreDataFeedStoreTests: FailableFeedStoreSpecs {
     func test_init_canRegisterCustomStoreTypeAndLoadPersistentStores() {
